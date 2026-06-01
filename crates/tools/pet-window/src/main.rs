@@ -294,7 +294,7 @@ fn main() {
         }
 
         let mut remaining = TICK_BATCH;
-        let mut log_screen_after_run = false;
+        let mut log_screen_countdown: i32 = 0;
         while remaining > 0 {
             if pet.keyboard_buffer_count() == 0 {
                 if let Some(byte) = input_queue.pop_front() {
@@ -302,7 +302,7 @@ fn main() {
                         byte, if byte.is_ascii_graphic() || byte == b' ' { byte as char } else { '?' });
                     pet.type_ascii(byte);
                     if byte == b'\r' {
-                        log_screen_after_run = true;
+                        log_screen_countdown = 10; // log for 10 frames after CR
                     }
                 }
             }
@@ -312,11 +312,14 @@ fn main() {
             remaining -= batch;
         }
 
-        if log_screen_after_run {
-            let screen = unsafe { std::slice::from_raw_parts(pet.screen_ptr(), 1000) };
-            for r in 0..5 {
-                let codes: Vec<String> = (0..40).map(|c| format!("${:02X}", screen[r*40+c])).collect();
-                eprintln!("[pet-window] VRAM row{}: {}", r, codes.join(" "));
+        if log_screen_countdown > 0 {
+            log_screen_countdown -= 1;
+            if log_screen_countdown == 0 {
+                let screen = unsafe { std::slice::from_raw_parts(pet.screen_ptr(), 1000) };
+                for r in 0..6 {
+                    let codes: Vec<String> = (0..40).map(|c| format!("${:02X}", screen[r*40+c])).collect();
+                    eprintln!("[pet-window] VRAM row{}: {}", r, codes.join(" "));
+                }
             }
         }
 
