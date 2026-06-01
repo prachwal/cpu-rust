@@ -107,7 +107,7 @@ impl PetBus {
             b'A'..=b'Z' | b'0'..=b'9' => byte,
             b'\r' | b'\n' => 0x0D,
             b' ' => 0x20,
-            0x21..=0x2F | 0x3A..=0x3F => byte,
+            0x21..=0x2F | 0x3A..=0x40 => byte,
             0x08 | 0x7F => 0x83,
             _ => return,
         };
@@ -248,7 +248,6 @@ impl Pet2001 {
                 self.bus.via.trigger_cb1();
                 // 60Hz tick — cursor blink / jiffy (once per VBLANK)
                 self.bus.ram[0x99] = self.bus.ram[0x99].wrapping_add(1);
-                self.bus.ram[0x9E] = 1;
                 let a8 = self.bus.ram[0xA8];
                 if a8 == 0 {
                     self.bus.ram[0xA8] = 20;
@@ -281,6 +280,14 @@ impl Pet2001 {
 
     pub fn type_ascii(&mut self, byte: u8) {
         self.bus.type_ascii_byte(byte);
+    }
+
+    pub fn keyboard_buffer_count(&self) -> u8 {
+        self.bus.ram[0x009E]
+    }
+
+    pub fn keyboard_buffer_byte(&self, index: u8) -> u8 {
+        self.bus.ram[0x026F + index as usize]
     }
 
     pub fn type_text(&mut self, text: &str) {

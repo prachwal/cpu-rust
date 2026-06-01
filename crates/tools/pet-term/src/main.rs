@@ -13,6 +13,7 @@ const COLS: usize = 40;
 const ROWS: usize = 25;
 const TICK_BATCH: u32 = 1_000;
 const FRAME_INTERVAL: Duration = Duration::from_millis(33);
+const ENTER_DEBOUNCE: Duration = Duration::from_millis(120);
 
 struct RomSpec {
     name: &'static str,
@@ -135,9 +136,13 @@ fn screen_bytes(pet: &pet_core::Pet2001) -> &[u8] {
     unsafe { std::slice::from_raw_parts(pet.screen_ptr(), pet.screen_len()) }
 }
 
+fn ram_bytes(pet: &pet_core::Pet2001) -> &[u8] {
+    unsafe { std::slice::from_raw_parts(pet.ram_ptr(), pet.ram_len()) }
+}
+
 fn pet_screen_code_to_char(code: u8) -> char {
     match code & 0x7F {
-        0x00 => '@',
+        0x00 => ' ',
         0x01..=0x1A => (b'A' + ((code & 0x7F) - 1)) as char,
         0x20..=0x3F => (code & 0x7F) as char,
         0x40..=0x5A => (b'A' + ((code & 0x7F) - 0x40)) as char,
@@ -150,14 +155,30 @@ fn pet_screen_code_to_char(code: u8) -> char {
     }
 }
 
+fn cursor_position(pet: &pet_core::Pet2001) -> Option<(usize, usize)> {
+    let ram = ram_bytes(pet);
+    let col = ram[0x00C6] as usize;
+    let screen_ptr = ram[0x00C4] as u16 | ((ram[0x00C5] as u16) << 8);
+    if col >= COLS || !(0x8000..0x8000 + (COLS * ROWS) as u16).contains(&screen_ptr) {
+        return None;
+    }
+    let row = (screen_ptr - 0x8000) as usize / COLS;
+    Some((row, col))
+}
+
 fn render_screen(pet: &pet_core::Pet2001) -> String {
     let screen = screen_bytes(pet);
+    let cursor = cursor_position(pet);
     let mut out = String::new();
     out.push_str(&format!("┌{}┐\r\n", "─".repeat(COLS)));
     for row in 0..ROWS {
         out.push('│');
         for col in 0..COLS {
-            out.push(pet_screen_code_to_char(screen[row * COLS + col]));
+            if cursor == Some((row, col)) {
+                out.push('█');
+            } else {
+                out.push(pet_screen_code_to_char(screen[row * COLS + col]));
+            }
         }
         out.push_str("│\r\n");
     }
@@ -177,6 +198,18 @@ fn screen_contains(pet: &pet_core::Pet2001, ch: char) -> bool {
         .any(|&code| pet_screen_code_to_char(code) == ch)
 }
 
+fn screen_text(pet: &pet_core::Pet2001) -> String {
+    let screen = screen_bytes(pet);
+    let mut text = String::new();
+    for row in 0..ROWS {
+        for col in 0..COLS {
+            text.push(pet_screen_code_to_char(screen[row * COLS + col]));
+        }
+        text.push('\n');
+    }
+    text
+}
+
 fn smoke_test(roms: &Roms) {
     let mut pet = new_pet(roms);
     pet.run(500_000);
@@ -190,8 +223,48 @@ fn smoke_test(roms: &Roms) {
     pet.type_text("PRINT 2+2\r");
     pet.run(300_000);
 
-    if !screen_contains(&pet, '4') {
+    let text = screen_text(&pet);
+    if !screen_contains(&pet, '4') || text.contains("SYNTAX ERROR") {
         eprintln!("PET smoke failed: PRINT 2+2 did not produce 4");
+        eprintln!("{}", render_screen(&pet));
+        std::process::exit(1);
+    }
+
+    let mut pet = new_pet(roms);
+    pet.run(500_000);
+    pet.type_text("PRINT 1\r");
+    pet.run(300_000);
+    let text = screen_text(&pet);
+    if !screen_contains(&pet, '1') || text.contains("SYNTAX ERROR") {
+        eprintln!("PET smoke failed: PRINT 1 produced syntax error");
+        eprintln!("{}", render_screen(&pet));
+        std::process::exit(1);
+    }
+
+    let mut pet = new_pet(roms);
+    pet.run(500_000);
+    for byte in b"print 1\r" {
+        pet.type_ascii(*byte);
+        pet.run(5_000);
+    }
+    pet.run(300_000);
+    let text = screen_text(&pet);
+    if !screen_contains(&pet, '1') || text.contains("SYNTAX ERROR") {
+        eprintln!("PET smoke failed: slow typing PRINT 1 produced syntax error");
+        eprintln!("{}", render_screen(&pet));
+        std::process::exit(1);
+    }
+
+    let mut pet = new_pet(roms);
+    pet.run(500_000);
+    for byte in b"list\r" {
+        pet.type_ascii(*byte);
+        pet.run(5_000);
+    }
+    pet.run(300_000);
+    let text = screen_text(&pet);
+    if text.contains("SYNTAX ERROR") {
+        eprintln!("PET smoke failed: LIST produced syntax error");
         eprintln!("{}", render_screen(&pet));
         std::process::exit(1);
     }
@@ -203,18 +276,20 @@ fn key_to_pet_ascii(code: KeyCode) -> Option<u8> {
     match code {
         KeyCode::Enter => Some(b'\r'),
         KeyCode::Backspace => Some(0x7F),
-        KeyCode::Char(ch) if ch.is_ascii() => Some(ch as u8),
+        KeyCode::Char(ch) if ch.is_ascii_graphic() || ch == ' ' => Some(ch as u8),
         _ => None,
     }
 }
 
 fn main() {
     let mut check_roms = false;
+    let mut debug_input = false;
     let mut smoke = false;
     let mut rom_dir = PathBuf::from(DEFAULT_ROM_DIR);
     for arg in std::env::args().skip(1) {
         match arg.as_str() {
             "--check-roms" => check_roms = true,
+            "--debug-input" => debug_input = true,
             "--smoke" => smoke = true,
             _ => rom_dir = PathBuf::from(arg),
         }
@@ -237,13 +312,21 @@ fn main() {
 
     let mut running = true;
     let mut last_frame = Instant::now();
+    let mut last_enter: Option<Instant> = None;
+    let mut input_len = 0usize;
 
     while running {
         let now = Instant::now();
 
         while poll(Duration::ZERO).unwrap() {
             if let Event::Key(key) = read().unwrap() {
-                if !matches!(key.kind, KeyEventKind::Press | KeyEventKind::Repeat) {
+                if debug_input {
+                    eprintln!(
+                        "[input] event code={:?} kind={:?} modifiers={:?}",
+                        key.code, key.kind, key.modifiers
+                    );
+                }
+                if key.kind != KeyEventKind::Press {
                     continue;
                 }
 
@@ -253,10 +336,58 @@ fn main() {
                         if key.modifiers.contains(KeyModifiers::CONTROL) =>
                     {
                         pet = new_pet(&roms);
+                        input_len = 0;
                     }
                     code => {
                         if let Some(byte) = key_to_pet_ascii(code) {
+                            if byte == 0x7F {
+                                input_len = input_len.saturating_sub(1);
+                                if debug_input {
+                                    eprintln!(
+                                        "[input] inject ${:02X} {:?} input_len={}",
+                                        byte, byte as char, input_len
+                                    );
+                                }
+                                pet.type_ascii(byte);
+                                continue;
+                            }
+                            if byte == b'\r' {
+                                if input_len == 0 {
+                                    if debug_input {
+                                        eprintln!("[input] ignore empty return");
+                                    }
+                                    continue;
+                                }
+                                if last_enter.is_some_and(|last| now - last < ENTER_DEBOUNCE) {
+                                    if debug_input {
+                                        eprintln!("[input] ignore debounced return");
+                                    }
+                                    continue;
+                                }
+                                last_enter = Some(now);
+                                input_len = 0;
+                            } else {
+                                input_len += 1;
+                            }
+                            if debug_input {
+                                eprintln!(
+                                    "[input] inject host=${:02X} {:?} input_len={}",
+                                    byte, byte as char, input_len
+                                );
+                            }
                             pet.type_ascii(byte);
+                            if debug_input {
+                                let count = pet.keyboard_buffer_count();
+                                let mut bytes = String::new();
+                                for i in 0..count {
+                                    bytes.push_str(&format!(
+                                        "{}${:02X}",
+                                        if i == 0 { "" } else { " " },
+                                        pet.keyboard_buffer_byte(i)
+                                    ));
+                                }
+                                eprintln!("[input] pet-buffer count={} [{}]", count, bytes);
+                            }
                         }
                     }
                 }
