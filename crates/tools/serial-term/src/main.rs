@@ -4,8 +4,8 @@ use std::time::{Duration, Instant};
 use cpu_machine::SerialMachine;
 use crossterm::cursor::{Hide, Show};
 use crossterm::event::{poll, read, Event, KeyCode, KeyEventKind};
-use crossterm::terminal::{disable_raw_mode, enable_raw_mode, Clear, ClearType};
-use crossterm::{execute, queue};
+use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
+use crossterm::execute;
 
 const STATUS_INTERVAL: Duration = Duration::from_millis(100);
 const PIPE_BURST: u64 = 100_000;
@@ -82,7 +82,7 @@ fn main() {
     let is_tty = atty::is(atty::Stream::Stdin);
     if is_tty {
         enable_raw_mode().unwrap();
-        execute!(stdout(), Hide, Clear(ClearType::All)).unwrap();
+        execute!(stdout(), Hide).unwrap();
     }
 
     // Non-blocking stdin for pipe mode
@@ -172,13 +172,11 @@ fn main() {
         // ── Flush ──
         stdout().flush().unwrap();
 
-        // ── Status ──
+        // ── Status (stderr) ──
         let now = Instant::now();
         if is_tty && now - last_status >= STATUS_INTERVAL {
             let line = status_line(&*machine, instr_count, last_key);
-            queue!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
-            print!("\r{}", line);
-            stdout().flush().unwrap();
+            eprint!("\r{}", line);
             last_status = now;
         }
 
@@ -205,8 +203,8 @@ fn main() {
     // Restore terminal
     if is_tty {
         let _ = disable_raw_mode();
-        let _ = execute!(stdout(), Show, Clear(ClearType::All));
+        let _ = execute!(stdout(), Show);
     }
-    println!();
-    println!("serial-term: {} instructions, {} cycles.", instr_count, machine.cycles());
+    eprintln!();
+    eprintln!("serial-term: {} instructions, {} cycles.", instr_count, machine.cycles());
 }
