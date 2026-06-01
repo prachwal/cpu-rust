@@ -489,12 +489,12 @@ fn build_chargen() -> Vec<u8> {
     for i in 0..8 {
         data[0x7F * 8 + i] = 0;
     }
-    // 0x80-0xFF = duplicate 0x00-0x7F
+    // 0x80-0xFF = inverse of 0x00-0x7F (bitwise NOT for pixel inversion)
     for ch in 0x80..=0xFF {
         let src = (ch - 0x80) * 8;
         let dst = ch * 8;
         for i in 0..8 {
-            data[dst + i] = data[src + i];
+            data[dst + i] = !data[src + i];
         }
     }
     data
