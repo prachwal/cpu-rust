@@ -698,6 +698,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "pet-window"
+version = "0.1.0"
+dependencies = [
+ "minifb",
+ "pet-core",
+]
+
+[[package]]
 name = "pia-6520"
 version = "0.1.0"
 

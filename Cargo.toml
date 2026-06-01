@@ -27,6 +27,7 @@ members = [
     "crates/tools/apple1-term",
     "crates/tools/apple1-window",
     "crates/tools/pet-term",
+    "crates/tools/pet-window",
 ]
 
 [profile.release]

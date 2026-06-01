@@ -19,7 +19,7 @@
 //!   CB1  — Vertical Blank (60Hz) — cursor blink / keyboard scan
 
 use cpu_bus::Bus;
-use cpu_display::{Display, DisplayConfig, Font, FontMapping};
+use cpu_display::{Display, DisplayConfig, Font};
 use mos6502_core::*;
 use pia_6520::Pia6821;
 use std::cell::RefCell;
@@ -77,7 +77,6 @@ struct PetBus {
     via: Via6522,
     vb_counter: u32,
     display: RefCell<Display>,
-    chargen: Vec<u8>,
 }
 
 impl PetBus {
@@ -108,8 +107,7 @@ impl PetBus {
             pia2: Pia6821::new(),
             via: Via6522::new(),
             vb_counter: 0,
-            display: RefCell::new(Display::new_text(cfg, 40, 25, font, FontMapping::PetAscii)),
-            chargen: cg,
+            display: RefCell::new(Display::new_text(cfg, 40, 25, font, cpu_display::FontMapping::Direct)),
         }
     }
 
@@ -117,13 +115,26 @@ impl PetBus {
         let mut disp = self.display.borrow_mut();
         let rows = 25;
         let cols = 40;
+        let cursor_idx = self.cursor_screen_index();
         for row in 0..rows {
             for col in 0..cols {
                 let idx = row * cols + col;
-                let ch = self.screen.get(idx).copied().unwrap_or(0x20);
+                let mut ch = self.screen.get(idx).copied().unwrap_or(0x20);
+                if cursor_idx == Some(idx) && ch == 0x00 {
+                    ch = 0x20;
+                }
                 disp.set_char(col as u16, row as u16, ch);
             }
         }
+    }
+
+    fn cursor_screen_index(&self) -> Option<usize> {
+        let col = self.ram[0x00C6] as usize;
+        let screen_ptr = self.ram[0x00C4] as u16 | ((self.ram[0x00C5] as u16) << 8);
+        if col >= 40 || !(0x8000..0x8000 + 1000).contains(&screen_ptr) {
+            return None;
+        }
+        Some((screen_ptr - 0x8000) as usize + col)
     }
 
     fn type_ascii_byte(&mut self, byte: u8) {
@@ -239,6 +250,18 @@ impl Pet2001 {
         kernal: &[u8],
     ) {
         let chargen = self.chargen.clone();
+        self.load_roms_with_chargen(basic_c000, basic_d000, editor, kernal, &chargen);
+    }
+
+    pub fn load_roms_with_chargen(
+        &mut self,
+        basic_c000: &[u8],
+        basic_d000: &[u8],
+        editor: &[u8],
+        kernal: &[u8],
+        chargen: &[u8],
+    ) {
+        self.chargen = chargen.to_vec();
         self.bus = PetBus::new(basic_c000, basic_d000, editor, kernal, &chargen);
         self.cpu = Emulator::new();
         self.cpu.set_register_sp(0xFF);
@@ -257,8 +280,7 @@ impl Pet2001 {
             return 0;
         }
         let mut n = 0u32;
-        let sync_every = count.max(1000);
-        for i in 0..count {
+        for _ in 0..count {
             // Execute one instruction (returns cycles)
             let c = self.cpu.tick_bus(&mut self.bus);
             if c == 0 {
@@ -377,6 +399,8 @@ fn build_chargen() -> Vec<u8> {
             data[off + i] = bytes[i];
         }
     };
+    // Screen code 0x00 = @ (in uppercase/graphics mode)
+    set(0x00, &[0x3C, 0x66, 0x6E, 0x6E, 0x60, 0x66, 0x3C, 0x00]);
     set(0x20, &[0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
     set(0x21, &[0x18, 0x18, 0x18, 0x18, 0x18, 0x00, 0x18, 0x00]);
     set(0x22, &[0x66, 0x66, 0x66, 0x00, 0x00, 0x00, 0x00, 0x00]);

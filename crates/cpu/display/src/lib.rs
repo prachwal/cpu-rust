@@ -247,16 +247,18 @@ impl Font {
     }
 
     /// Load a PET 2001 style font (8×8 pixels).
-    /// PET char ROM has 512 chars × 8 bytes (first 256 normal, next 256 inverse).
+    /// PET char ROMs are commonly 2048 bytes (256 chars × 8 bytes).
+    /// Some dumps include an additional inverse/alternate half (4096 bytes).
     pub fn load_pet(data: &[u8]) -> Self {
-        assert!(data.len() >= 512 * 8, "PET font: expected at least 4096 bytes");
+        assert!(data.len() >= 256 * 8, "PET font: expected at least 2048 bytes");
+        let count = (data.len() / 8).min(512) as u16;
         Self {
             data: data.to_vec(),
             char_width: 8,
             char_height: 8,
             first: 0,
             last: 255,
-            count: 512,
+            count,
             row_stride: 1,
         }
     }

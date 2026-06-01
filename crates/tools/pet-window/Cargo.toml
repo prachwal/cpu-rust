@@ -1,0 +1,13 @@
+[package]
+name = "pet-window"
+version = "0.1.0"
+edition = "2021"
+description = "Commodore PET 2001 graphical window - minifb + cpu-display RGBA"
+
+[[bin]]
+name = "pet-window"
+path = "src/main.rs"
+
+[dependencies]
+pet-core = { path = "../../machines/pet" }
+minifb = "0.25"
