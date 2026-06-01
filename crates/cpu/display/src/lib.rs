@@ -69,11 +69,11 @@ impl DisplayConfig {
         }
     }
 
-    /// Apple 1: 40×24 characters at 5×7 px
+    /// Apple 1: 40×24 characters in 5×7 glyphs stored in 5×8 cells.
     pub fn apple1() -> Self {
         Self {
             width: 200,  // 40 * 5
-            height: 168, // 24 * 7
+            height: 192, // 24 * 8
             palette: vec![[0, 0, 0, 255], [0, 200, 0, 255]],
             pixel_aspect: (1, 1),
         }
@@ -262,7 +262,7 @@ impl Font {
     }
 
     /// Generate an Apple 1 style 5×7 bitmap font for ASCII 0x20-0x5F (64 chars).
-    /// Each character is 8 bytes (5×7 in 8×8 cell), MSB = leftmost pixel.
+    /// Each character is 8 bytes: seven visible rows plus one blank row.
     /// Based on the 2513 character generator used in the Apple 1.
     pub fn apple1_5x7() -> Self {
         let count = 64;
@@ -404,7 +404,7 @@ impl Font {
                 data[base + j] = row;
             }
         }
-        Self { data, char_width: 5, char_height: 7, first: 0x20, last: 0x5F, count: count as u16, row_stride: 1 }
+        Self { data, char_width: 5, char_height: 8, first: 0x20, last: 0x5F, count: count as u16, row_stride: 1 }
     }
 
     /// Generate a minimal 8×8 bitmap font for ASCII 0x20-0x7F (96 chars).
