@@ -290,6 +290,8 @@ fn main() {
         while remaining > 0 {
             if pet.keyboard_buffer_count() == 0 {
                 if let Some(byte) = input_queue.pop_front() {
+                    eprintln!("[pet-window] KBD: -> keyboard buffer byte=${:02X} ('{}')",
+                        byte, if byte.is_ascii_graphic() || byte == b' ' { byte as char } else { '?' });
                     pet.type_ascii(byte);
                 }
             }
