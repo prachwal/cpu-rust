@@ -1,0 +1,16 @@
+[package]
+name = "apple1-core"
+version = "0.1.0"
+edition = "2021"
+description = "Apple 1 machine emulator (CPU 6502 + PIA + terminal + keyboard)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+mos6502-bus = { path = "../../6502/bus" }
+mos6502-core = { path = "../../6502/core" }
+pia-6520 = { path = "../../chips/pia-6520" }
+console_error_panic_hook = "0.1"
+

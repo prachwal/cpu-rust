@@ -1,0 +1,40 @@
+[package]
+name = "mos6502-core"
+version = "0.1.0"
+edition = "2021"
+description = "MOS 6502 CPU emulator in Rust/WASM"
+license = "MIT"
+readme = "README.md"
+keywords = ["6502", "emulator", "cpu", "wasm", "retro"]
+categories = ["emulators", "wasm", "no-std"]
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+mos6502-bus = { path = "../bus" }
+mos6502-config = { path = "../config" }
+mos6502-memory = { path = "../memory" }
+
+# WASM bindings
+wasm-bindgen = "0.2"
+
+# Serialization for save/load state
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# Better panic messages in WASM
+console_error_panic_hook = "0.1"
+
+[dev-dependencies]
+# For testing
+rand = "0.8"
+
+[features]
+default = []
+# Enable cycle-accurate emulation (slower but more accurate)
+cycle-accurate = []
+# Enable all undocumented opcodes
+undocumented-ops = []
+# Enable BCD mode support
+bcd-mode = []

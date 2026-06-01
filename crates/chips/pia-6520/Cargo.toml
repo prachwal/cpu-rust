@@ -1,0 +1,7 @@
+[package]
+name = "pia-6520"
+version = "0.1.0"
+edition = "2021"
+description = "MOS 6520 / 6821 PIA (Peripheral Interface Adapter) emulation"
+
+[dependencies]

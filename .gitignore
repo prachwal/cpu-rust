@@ -1,0 +1,52 @@
+# ==========
+# Rust
+# ==========
+
+# Build artifacts
+/target/
+
+# Compiled objects
+*.rlib
+*.so
+*.dylib
+*.dll
+*.exe
+*.o
+*.a
+
+# Debug symbols
+*.dSYM
+*.pdb
+
+# Cargo metadata
+.fingerprint
+
+# Rustup
+.rustup/
+rustup-*
+
+# ==========
+# Editors
+# ==========
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ==========
+# OS
+# ==========
+.DS_Store
+Thumbs.db
+
+# ==========
+# Backup & Temp
+# ==========
+*.bak
+*.backup
+*.bk
+*.rs.bk
+*.tmp
+*.temp
+*.log

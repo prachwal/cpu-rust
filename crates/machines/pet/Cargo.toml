@@ -1,0 +1,17 @@
+[package]
+name = "pet-core"
+version = "0.1.0"
+edition = "2021"
+description = "Commodore PET 2001 emulator (6502 + PIA + VIA + memory-mapped video)"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+mos6502-bus = { path = "../../6502/bus" }
+mos6502-core = { path = "../../6502/core" }
+pia-6520 = { path = "../../chips/pia-6520" }
+via-6522 = { path = "../../chips/via-6522" }
+console_error_panic_hook = "0.1"
+

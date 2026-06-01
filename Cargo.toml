@@ -1,0 +1,25 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/6502/core",
+    "crates/6502/bus",
+    "crates/6502/config",
+    "crates/6502/memory",
+    "crates/machines/apple1",
+    "crates/machines/pet",
+    "crates/chips/pia-6520",
+    "crates/chips/via-6522",
+    "crates/other/chip8",
+    "crates/other/z80",
+]
+
+[profile.release]
+opt-level = "z"
+lto = true
+strip = true
+panic = "abort"
+codegen-units = 1
+
+[profile.release-with-debug]
+inherits = "release"
+debug = true

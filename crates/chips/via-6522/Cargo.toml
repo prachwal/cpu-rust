@@ -1,0 +1,7 @@
+[package]
+name = "via-6522"
+version = "0.1.0"
+edition = "2021"
+description = "MOS 6522 VIA (Versatile Interface Adapter) emulation"
+
+[dependencies]

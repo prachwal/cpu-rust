@@ -1,0 +1,9 @@
+[package]
+name = "mos6502-memory"
+version = "0.1.0"
+edition = "2021"
+description = "MOS 6502 CPU emulator memory module"
+
+[dependencies]
+mos6502-bus = { path = "../bus" }
+mos6502-config = { path = "../config" }
