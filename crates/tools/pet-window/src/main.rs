@@ -293,6 +293,23 @@ fn main() {
                     eprintln!("[pet-window] KBD: -> keyboard buffer byte=${:02X} ('{}')",
                         byte, if byte.is_ascii_graphic() || byte == b' ' { byte as char } else { '?' });
                     pet.type_ascii(byte);
+                    if byte == b'\r' {
+                        // After CR, log screen codes near the cursor
+                        let ram = unsafe { std::slice::from_raw_parts(pet.ram_ptr(), 256) };
+                        let col = ram[0x00C6] as usize;
+                        let screen_ptr = (ram[0x00C5] as u16) << 8 | ram[0x00C4] as u16;
+                        let row = if (0x8000..0x8000 + 1000).contains(&screen_ptr) {
+                            (screen_ptr - 0x8000) as usize / 40
+                        } else { 0 };
+                        let screen = unsafe { std::slice::from_raw_parts(pet.screen_ptr(), 1000) };
+                        let idx = row * 40 + col;
+                        let codes: Vec<String> = (idx.saturating_sub(2)..(idx + 4).min(1000))
+                            .map(|i| format!("${:02X}", screen[i]))
+                            .collect();
+                        eprintln!("[pet-window] CURSOR: row={} col={} screen[{}-{}] = [{}]",
+                            row, col, idx.saturating_sub(2), (idx + 3).min(999),
+                            codes.join(" "));
+                    }
                 }
             }
 
