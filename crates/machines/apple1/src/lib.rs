@@ -144,7 +144,28 @@ impl Apple1Emulator {
         std::mem::take(&mut self.bus.pia.display)
     }
 
-    pub fn get_pc(&self) -> u16 { self.cpu.get_register_pc() }
-    pub fn get_instructions(&self) -> u64 { self.cpu.get_instruction_count() }
-    pub fn get_cycles(&self) -> u64 { self.cpu.get_cycle_count() }
+    pub fn get_pc(&self) -> u16 {
+        self.cpu.get_register_pc()
+    }
+    pub fn get_sp(&self) -> u8 {
+        self.cpu.get_register_sp()
+    }
+    pub fn get_a(&self) -> u8 {
+        self.cpu.get_register_a()
+    }
+    pub fn get_x(&self) -> u8 {
+        self.cpu.get_register_x()
+    }
+    pub fn get_y(&self) -> u8 {
+        self.cpu.get_register_y()
+    }
+    pub fn get_p(&self) -> u8 {
+        self.cpu.get_status_register()
+    }
+    pub fn get_instructions(&self) -> u64 {
+        self.cpu.get_instruction_count()
+    }
+    pub fn get_cycles(&self) -> u64 {
+        self.cpu.get_cycle_count()
+    }
 }

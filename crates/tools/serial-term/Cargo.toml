@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 cpu-machine = { path = "../../cpu/machine" }
 eater-6502 = { path = "../../machines/eater-6502" }
+apple1-core = { path = "../../machines/apple1" }
 crossterm = "0.28"
 atty = "0.2"
 libc = "0.2"

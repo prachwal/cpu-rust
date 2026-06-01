@@ -71,6 +71,12 @@ fn wait_bit(a: &mut Asm, sts_addr: u16, mask: u8) {
     a.byte(0xF0); a.reloc(pos);       // BEQ pos
 }
 
+fn send_byte(a: &mut Asm, byte: u8) {
+    wait_bit(a, 0x6001, 0x10); // wait Tx empty
+    a.byte(0xA9); a.imm(byte);       // LDA #byte
+    a.byte(0x8D); a.addr(0x6000);    // STA data
+}
+
 pub fn generate_monitor() -> Vec<u8> {
     let mut a = Asm::new();
 
@@ -89,6 +95,8 @@ pub fn generate_monitor() -> Vec<u8> {
     // Set control
     a.byte(0xA9); a.imm(0x1F);  // LDA #$1F
     a.byte(0x8D); a.addr(0x6003); // STA $6003
+
+    send_byte(&mut a, b'>');
 
     // Main loop
     a.label("main_loop");
@@ -112,10 +120,8 @@ pub fn generate_monitor() -> Vec<u8> {
     a.patch_label("main_loop", a.pos());
     a.byte(0xD0); a.reloc(0); // BNE main_loop (patched)
 
-    // Send LF
-    wait_bit(&mut a, 0x6001, 0x10); // wait Tx
-    a.byte(0xA9); a.imm(0x0A);  // LDA #$0A
-    a.byte(0x8D); a.addr(0x6000); // STA $6000
+    send_byte(&mut a, 0x0A);
+    send_byte(&mut a, b'>');
 
     a.byte(0x4C); a.addr(0x8000); // JMP main_loop (absolute)
     // Actually should jump to main_loop label... let's fix the label ref

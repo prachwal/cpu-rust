@@ -493,6 +493,7 @@ dependencies = [
 name = "serial-term"
 version = "0.1.0"
 dependencies = [
+ "apple1-core",
  "atty",
  "cpu-machine",
  "crossterm",
