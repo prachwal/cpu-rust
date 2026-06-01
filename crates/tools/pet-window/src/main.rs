@@ -86,10 +86,11 @@ fn load_roms(dir: &Path) -> Roms {
 }
 
 fn patch_readable_zero(chargen: &mut [u8]) {
+    // PET 2001 editor ROM writes screen code 0x00 for digit '0'.
+    // Patch chargen index 0x00 to render the digit '0' glyph instead of '@'.
     const ZERO: [u8; 8] = [0x3C, 0x42, 0x42, 0x42, 0x42, 0x42, 0x3C, 0x00];
-    let start = 0x30 * 8;
-    if chargen.len() >= start + ZERO.len() {
-        chargen[start..start + ZERO.len()].copy_from_slice(&ZERO);
+    if chargen.len() >= ZERO.len() {
+        chargen[0..ZERO.len()].copy_from_slice(&ZERO);
     }
 }
 
