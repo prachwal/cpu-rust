@@ -1,5 +1,5 @@
 use cpu_bus::Bus;
-use cpu_display::{Display, DisplayConfig, Font, FontMapping};
+use cpu_display::{Display, DisplayConfig, Font};
 use mos6502_core::*;
 use pia_6520::Pia6821;
 use std::cell::RefCell;
@@ -23,7 +23,7 @@ impl Apple1Pia {
             pia: Pia6821::new(),
             keyboard: VecDeque::new(),
             display: Vec::new(),
-            gfx: RefCell::new(Display::new_text(cfg, 40, 24, font, FontMapping::Apple1)),
+            gfx: RefCell::new(Display::new_text(cfg, 40, 24, font, cpu_display::FontMapping::Direct)),
         }
     }
     fn push_key(&mut self, ch: u8) { self.keyboard.push_back(ch); }
@@ -194,3 +194,7 @@ impl Apple1Emulator {
         self.cpu.get_cycle_count()
     }
 }
+
+#[cfg(test)]
+#[path = "tests/lib.rs"]
+mod tests;

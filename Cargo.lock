@@ -37,6 +37,7 @@ name = "apple1-window"
 version = "0.1.0"
 dependencies = [
  "apple1-core",
+ "cpu-display",
  "minifb",
 ]
 

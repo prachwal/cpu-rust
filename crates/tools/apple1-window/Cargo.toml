@@ -10,4 +10,5 @@ path = "src/main.rs"
 
 [dependencies]
 apple1-core = { path = "../../machines/apple1" }
+cpu-display = { path = "../../cpu/display" }
 minifb = "0.25"
