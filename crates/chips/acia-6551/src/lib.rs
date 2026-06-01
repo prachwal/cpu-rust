@@ -22,11 +22,6 @@ pub const CMD_MODE_ECHO: u8      = 1;
 pub const CMD_MODE_LOOPBACK: u8  = 2;
 pub const CMD_MODE_REMOTE: u8    = 3;
 
-fn parity_of(val: u8, odd: bool) -> u8 {
-    let ones = val.count_ones() as u8;
-    if odd { (ones & 1) } else { ((ones & 1) ^ 1) }
-}
-
 pub struct Acia6551 {
     status: u8,
     command: u8,
@@ -35,7 +30,6 @@ pub struct Acia6551 {
     // internal state
     rx_data: u8,
     rx_pending: bool,
-    tx_data: u8,
     tx_pending: bool,
 
     // external observer (for testing)
@@ -51,7 +45,6 @@ impl Acia6551 {
             control: 0,
             rx_data: 0,
             rx_pending: false,
-            tx_data: 0,
             tx_pending: false,
             tx_output: None,
             irq: false,
