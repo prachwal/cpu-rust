@@ -209,7 +209,7 @@ impl Font {
     /// Load a raw bitmap font.
     ///
     /// Each character consists of `char_height` rows, each row is `char_width` bits
-    /// packed LSB-first (bit 0 = leftmost pixel).
+    /// packed MSB-first (bit 7 = leftmost pixel). Bits beyond `char_width` should be 0.
     ///
     /// `first` and `last` define the range of character codes covered.
     pub fn load_raw(data: &[u8], char_width: u8, char_height: u8, first: u8, last: u8) -> Self {
@@ -446,7 +446,7 @@ impl Font {
         let idx = if ch < self.first { self.first } else if ch > self.last { self.last } else { ch };
         let char_index = (idx - self.first) as usize;
         let row = y as usize;
-        let bit_pos = self.char_width - 1 - x; // bit 0 = rightmost usually
+        let bit_pos = 7 - x; // MSB = leftmost pixel
         let byte_index = char_index * self.char_height as usize * self.row_stride as usize
             + row * self.row_stride as usize
             + bit_pos as usize / 8;
@@ -821,7 +821,7 @@ impl Display {
                         for cy in 0..char_dy {
                             let row_bits = font.row_bits(mapped, cy as u8) as u16;
                             for cx in 0..char_dx {
-                                let pixel_set = (row_bits >> (char_dx - 1 - cx)) & 1 != 0;
+                                let pixel_set = (row_bits >> (7 - cx)) & 1 != 0;
                                 let color_idx = if pixel_set { fg } else { bg };
                                 let (r, g, b, a) = self.resolve_color(color_idx);
 

@@ -159,26 +159,19 @@ fn test_font_load_pet() {
 
 #[test]
 fn test_font_load_raw() {
-    // 2 chars, 2x4 pixels, raw format
-    // Char 0: A pattern (2x4), Char 1: B pattern
-    let mut data = Vec::new();
-    for ch in 0..2u8 {
-        for y in 0..4 {
-            // 2 bits per row
-            let row = match (ch, y) {
-                (0, 0) => 0b10, // █░
-                (0, 1) => 0b11, // ██
-                (0, 2) => 0b10, // █░
-                (0, 3) => 0b00,
-                (1, 0) => 0b11, // ██
-                (1, 1) => 0b10, // █░
-                (1, 2) => 0b11, // ██
-                (1, 3) => 0b00,
-                _ => 0,
-            };
-            data.push(row);
-        }
-    }
+    // 2 chars, 2x4 pixels, raw format, MSB-first (bit 7 = leftmost)
+    let data = vec![
+        // Char 'A' (0x41): 2x4, MSB-first
+        0x80, // █░  (bit 7=1, bit 6=0)
+        0xC0, // ██  (bit 7=1, bit 6=1)
+        0x80, // █░
+        0x00,
+        // Char 'B' (0x42):
+        0xC0, // ██
+        0x80, // █░
+        0xC0, // ██
+        0x00,
+    ];
     let font = Font::load_raw(&data, 2, 4, 0x41, 0x42);
     assert_eq!(font.char_width, 2);
     assert_eq!(font.char_height, 4);
