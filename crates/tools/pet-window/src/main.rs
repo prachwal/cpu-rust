@@ -245,6 +245,7 @@ fn main() {
     }));
 
     let mut fb = vec![0u32; WINDOW_W * SCALE * WINDOW_H * SCALE];
+    let mut log_screen_countdown: i32 = 0;
     let mut input_queue = VecDeque::new();
     let mut control_queue = VecDeque::new();
     let mut control_down = vec![false; CONTROL_KEYS.len()];
@@ -294,7 +295,6 @@ fn main() {
         }
 
         let mut remaining = TICK_BATCH;
-        let mut log_screen_countdown: i32 = 0;
         while remaining > 0 {
             if pet.keyboard_buffer_count() == 0 {
                 if let Some(byte) = input_queue.pop_front() {
