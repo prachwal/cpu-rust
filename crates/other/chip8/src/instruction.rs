@@ -1,7 +1,25 @@
+use cpu_display::Display;
+use cpu_keyboard::Keyboard;
 use crate::cpu::Cpu;
-use crate::display::Display;
-use crate::keyboard::Keyboard;
 use crate::memory::Memory;
+
+fn draw_sprite(display: &mut Display, x: u8, y: u8, sprite: &[u8]) -> bool {
+    let mut collision = false;
+    let w = display.width();
+    let h = display.height();
+    for (row, &byte) in sprite.iter().enumerate() {
+        if row as u16 >= h { break; }
+        let py = (y.wrapping_add(row as u8)) % (h as u8);
+        for bit in 0..8 {
+            if byte & (0x80 >> bit) == 0 { continue; }
+            let px = (x.wrapping_add(bit)) % (w as u8);
+            let old = display.get_pixel(px, py);
+            display.set_pixel(px, py, old ^ 1);
+            if old != 0 { collision = true; }
+        }
+    }
+    collision
+}
 
 pub struct Quirks {
     pub shift_vy: bool,
@@ -128,9 +146,9 @@ pub fn execute(
         0xC000 => {
             cpu.v[x as usize] = cpu.rand_byte() & nn;
         }
-        0xD000 => {
+         0xD000 => {
             let sprite = memory.read_slice(cpu.i, n as u16);
-            let coll = display.draw(cpu.v[x as usize], cpu.v[y as usize], sprite);
+            let coll = draw_sprite(display, cpu.v[x as usize], cpu.v[y as usize], sprite);
             cpu.v[0xF] = if coll { 1 } else { 0 };
         }
         0xE000 => match opcode & 0x00FF {
@@ -206,7 +224,7 @@ mod tests {
         (
             Cpu::new(),
             Memory::new(),
-            Display::new(),
+            Display::new(64, 32),
             Keyboard::new(),
             Quirks { shift_vy: false, memory_inc_i: false, vf_reset: true },
         )
@@ -215,9 +233,10 @@ mod tests {
     #[test]
     fn test_00e0_cls() {
         let (mut cpu, mut mem, mut display, kb, config) = setup();
-        for cell in display.buffer.iter_mut() { *cell = 1; }
+        display.set_pixel(0, 0, 1);
+        assert!(display.get_pixel(0, 0) != 0);
         execute(0x00E0, &mut cpu, &mut mem, &mut display, &kb, &config);
-        assert_eq!(display.buffer[0], 0);
+        assert_eq!(display.get_pixel(0, 0), 0);
     }
 
     #[test]
@@ -441,9 +460,9 @@ mod tests {
         cpu.v[0] = 10;
         cpu.v[1] = 5;
         execute(0xD011, &mut cpu, &mut mem, &mut display, &kb, &config);
-        assert!(display.get_pixel(10, 5));
-        assert!(display.get_pixel(17, 5));
-        assert!(!display.get_pixel(18, 5));
+        assert!(display.get_pixel(10, 5) != 0);
+        assert!(display.get_pixel(17, 5) != 0);
+        assert!(display.get_pixel(18, 5) == 0);
     }
 
     #[test]

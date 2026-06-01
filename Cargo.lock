@@ -7,7 +7,7 @@ name = "apple1-core"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
- "mos6502-bus",
+ "cpu-bus",
  "mos6502-core",
  "pia-6520",
  "wasm-bindgen",
@@ -30,6 +30,10 @@ name = "chip8-core"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
+ "cpu-bus",
+ "cpu-display",
+ "cpu-keyboard",
+ "cpu-memory",
  "serde",
  "serde_json",
  "wasm-bindgen",
@@ -43,6 +47,25 @@ checksum = "a06aeb73f470f66dcdbf7223caeebb85984942f22f1adb2a088cf9668146bbbc"
 dependencies = [
  "cfg-if",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "cpu-bus"
+version = "0.1.0"
+
+[[package]]
+name = "cpu-display"
+version = "0.1.0"
+
+[[package]]
+name = "cpu-keyboard"
+version = "0.1.0"
+
+[[package]]
+name = "cpu-memory"
+version = "0.1.0"
+dependencies = [
+ "cpu-bus",
 ]
 
 [[package]]
@@ -75,10 +98,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b947ae49db0d222b1dbc6b113ce7248a3fc3a6ca21b696717bfc000ba4484d8"
 
 [[package]]
-name = "mos6502-bus"
-version = "0.1.0"
-
-[[package]]
 name = "mos6502-config"
 version = "0.1.0"
 dependencies = [
@@ -91,7 +110,7 @@ name = "mos6502-core"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
- "mos6502-bus",
+ "cpu-bus",
  "mos6502-config",
  "mos6502-memory",
  "rand",
@@ -104,7 +123,7 @@ dependencies = [
 name = "mos6502-memory"
 version = "0.1.0"
 dependencies = [
- "mos6502-bus",
+ "cpu-bus",
  "mos6502-config",
 ]
 
@@ -119,7 +138,7 @@ name = "pet-core"
 version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
- "mos6502-bus",
+ "cpu-bus",
  "mos6502-core",
  "pia-6520",
  "via-6522",

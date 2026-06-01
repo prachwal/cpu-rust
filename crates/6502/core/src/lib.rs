@@ -36,7 +36,7 @@
 pub mod cpu;
 pub mod instruction;
 
-pub use mos6502_bus::Bus;
+pub use cpu_bus::Bus;
 pub use mos6502_config::{CpuFamily, CpuQuirks, MachineConfig};
 pub use mos6502_memory::Memory;
 

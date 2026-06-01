@@ -1,4 +1,4 @@
-use mos6502_bus::Bus;
+use cpu_bus::Bus;
 use crate::cpu::Cpu;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

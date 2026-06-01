@@ -1,8 +1,6 @@
 mod config;
 mod cpu;
-mod display;
 mod instruction;
-mod keyboard;
 mod memory;
 
 use wasm_bindgen::prelude::*;
@@ -16,8 +14,8 @@ pub fn init_panic_hook() {
 pub struct Emulator {
     cpu: cpu::Cpu,
     memory: memory::Memory,
-    display: display::Display,
-    keyboard: keyboard::Keyboard,
+    display: cpu_display::Display,
+    keyboard: cpu_keyboard::Keyboard,
     config: config::MachineConfig,
 }
 
@@ -34,8 +32,8 @@ impl Emulator {
         Emulator {
             cpu: cpu::Cpu::new(),
             memory: memory::Memory::with_font_offset(cfg.memory.font_offset),
-            display: display::Display::with_size(w, h),
-            keyboard: keyboard::Keyboard::new(),
+            display: cpu_display::Display::new(w, h),
+            keyboard: cpu_keyboard::Keyboard::new(),
             config: cfg,
         }
     }
@@ -51,8 +49,8 @@ impl Emulator {
         self.config = cfg;
         self.cpu = cpu::Cpu::new();
         self.memory = memory::Memory::with_font_offset(self.config.memory.font_offset);
-        self.display = display::Display::with_size(w, h);
-        self.keyboard = keyboard::Keyboard::new();
+        self.display = cpu_display::Display::new(w, h);
+        self.keyboard = cpu_keyboard::Keyboard::new();
         Ok(())
     }
 
@@ -138,7 +136,7 @@ impl Emulator {
     pub fn reset(&mut self) {
         self.cpu.reset();
         self.memory = memory::Memory::with_font_offset(self.config.memory.font_offset);
-        self.display = display::Display::with_size(
+        self.display = cpu_display::Display::new(
             self.config.display.width,
             self.config.display.height,
         );

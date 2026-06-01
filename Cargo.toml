@@ -1,8 +1,11 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/cpu/bus",
+    "crates/cpu/display",
+    "crates/cpu/keyboard",
+    "crates/cpu/memory",
     "crates/6502/core",
-    "crates/6502/bus",
     "crates/6502/config",
     "crates/6502/memory",
     "crates/machines/apple1",

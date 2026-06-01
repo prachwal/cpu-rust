@@ -8,23 +8,19 @@ impl Keyboard {
     }
 
     pub fn press(&mut self, key: u8) {
-        if key < 16 {
-            self.keys[key as usize] = true;
+        if let Some(k) = self.keys.get_mut(key as usize) {
+            *k = true;
         }
     }
 
     pub fn release(&mut self, key: u8) {
-        if key < 16 {
-            self.keys[key as usize] = false;
+        if let Some(k) = self.keys.get_mut(key as usize) {
+            *k = false;
         }
     }
 
     pub fn is_pressed(&self, key: u8) -> bool {
-        if key < 16 {
-            self.keys[key as usize]
-        } else {
-            false
-        }
+        self.keys.get(key as usize).copied().unwrap_or(false)
     }
 
     pub fn any_pressed(&self) -> Option<u8> {

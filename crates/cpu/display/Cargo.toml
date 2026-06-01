@@ -1,0 +1,5 @@
+[package]
+name = "cpu-display"
+version = "0.1.0"
+edition = "2021"
+description = "Universal pixel buffer — width, height, get/set pixel, buffer access"

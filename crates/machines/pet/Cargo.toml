@@ -9,7 +9,7 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 wasm-bindgen = "0.2"
-mos6502-bus = { path = "../../6502/bus" }
+cpu-bus = { path = "../../cpu/bus" }
 mos6502-core = { path = "../../6502/core" }
 pia-6520 = { path = "../../chips/pia-6520" }
 via-6522 = { path = "../../chips/via-6522" }

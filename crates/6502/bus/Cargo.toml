@@ -1,5 +1,0 @@
-[package]
-name = "mos6502-bus"
-version = "0.1.0"
-edition = "2021"
-description = "MOS 6502 CPU emulator Bus trait"

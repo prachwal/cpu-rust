@@ -18,7 +18,7 @@
 //! ## VIA connections
 //!   CB1  — Vertical Blank (60Hz) — cursor blink / keyboard scan
 
-use mos6502_bus::Bus;
+use cpu_bus::Bus;
 use mos6502_core::*;
 use pia_6520::Pia6821;
 use via_6522::Via6522;

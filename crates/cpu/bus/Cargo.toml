@@ -1,0 +1,5 @@
+[package]
+name = "cpu-bus"
+version = "0.1.0"
+edition = "2021"
+description = "Universal CPU Bus trait — read/write byte at address"

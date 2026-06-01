@@ -5,5 +5,5 @@ edition = "2021"
 description = "MOS 6502 CPU emulator memory module"
 
 [dependencies]
-mos6502-bus = { path = "../bus" }
+cpu-bus = { path = "../../cpu/bus" }
 mos6502-config = { path = "../config" }

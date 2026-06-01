@@ -1,3 +1,5 @@
+use cpu_bus::Bus;
+
 const FONT: [u8; 80] = [
     0xF0, 0x90, 0x90, 0x90, 0xF0, 0x20, 0x60, 0x20, 0x20, 0x70,
     0xF0, 0x10, 0xF0, 0x80, 0xF0, 0xF0, 0x10, 0xF0, 0x10, 0xF0,
@@ -9,48 +11,49 @@ const FONT: [u8; 80] = [
     0xF0, 0x80, 0xF0, 0x80, 0xF0, 0xF0, 0x80, 0xF0, 0x80, 0x80,
 ];
 
-const DEFAULT_SIZE: usize = 4096;
+const MEM_SIZE: usize = 4096;
 
 pub struct Memory {
-    data: Vec<u8>,
-    pub size: usize,
+    inner: cpu_memory::Memory,
 }
 
 impl Memory {
     pub fn new() -> Self {
-        Memory::with_size_and_font(DEFAULT_SIZE, 0x050)
+        Memory::with_font_offset(0x050)
     }
 
     pub fn with_font_offset(font_offset: u16) -> Self {
-        Memory::with_size_and_font(DEFAULT_SIZE, font_offset)
-    }
-
-    pub fn with_size_and_font(size: usize, font_offset: u16) -> Self {
-        let mut data = vec![0u8; size];
-        let start = font_offset as usize;
-        let end = (start + FONT.len()).min(size);
-        data[start..end].copy_from_slice(&FONT[..end - start]);
-        Memory { data, size }
+        let mut inner = cpu_memory::Memory::new(MEM_SIZE);
+        inner.load(&FONT, font_offset);
+        Memory { inner }
     }
 
     pub fn load_rom(&mut self, rom: &[u8], offset: u16) {
-        let start = offset as usize;
-        let end = (start + rom.len()).min(self.size);
-        self.data[start..end].copy_from_slice(&rom[..end - start]);
+        self.inner.load(rom, offset);
     }
 
     pub fn read(&self, addr: u16) -> u8 {
-        self.data[addr as usize % self.size]
+        self.inner.read(addr)
     }
 
     pub fn write(&mut self, addr: u16, val: u8) {
-        self.data[addr as usize % self.size] = val;
+        self.inner.write(addr, val);
     }
 
     pub fn read_slice(&self, addr: u16, len: u16) -> &[u8] {
-        let start = addr as usize % self.size;
-        let end = (start + len as usize).min(self.size);
-        &self.data[start..end]
+        let data = self.inner.as_slice();
+        let start = addr as usize % MEM_SIZE;
+        let end = (start + len as usize).min(MEM_SIZE);
+        &data[start..end]
+    }
+}
+
+impl Bus for Memory {
+    fn read(&mut self, addr: u16) -> u8 {
+        self.inner.read(addr)
+    }
+    fn write(&mut self, addr: u16, value: u8) {
+        self.inner.write(addr, value);
     }
 }
 
@@ -89,8 +92,7 @@ mod tests {
 
     #[test]
     fn test_wraparound() {
-        let m = Memory::with_size_and_font(256, 0x050);
-        // addr 0x100 wraps to 0 in a 256-byte memory
-        m.read(0x100);
+        let m = Memory::with_font_offset(0x050);
+        m.read(0x1000);
     }
 }

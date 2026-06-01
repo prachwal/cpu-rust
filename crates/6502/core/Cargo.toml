@@ -12,7 +12,7 @@ categories = ["emulators", "wasm", "no-std"]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-mos6502-bus = { path = "../bus" }
+cpu-bus = { path = "../../cpu/bus" }
 mos6502-config = { path = "../config" }
 mos6502-memory = { path = "../memory" }
 

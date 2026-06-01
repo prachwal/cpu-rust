@@ -1,4 +1,4 @@
-use mos6502_bus::Bus;
+use cpu_bus::Bus;
 use mos6502_config::MachineConfig;
 
 #[derive(Debug, Clone)]

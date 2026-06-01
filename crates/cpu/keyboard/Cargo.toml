@@ -1,0 +1,5 @@
+[package]
+name = "cpu-keyboard"
+version = "0.1.0"
+edition = "2021"
+description = "Universal 16-key state tracker — press, release, is_pressed, any_pressed"

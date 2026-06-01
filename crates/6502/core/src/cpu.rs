@@ -3,7 +3,7 @@
 //! Implements the 6502 processor core with all registers, flags,
 //! and basic operations.
 
-use mos6502_bus::Bus;
+use cpu_bus::Bus;
 use mos6502_config::{CpuFamily, MachineConfig, RmwBehavior};
 #[cfg(test)]
 use mos6502_memory::Memory;
