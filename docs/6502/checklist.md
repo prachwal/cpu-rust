@@ -39,17 +39,20 @@
 - [x] PLX (0xFA) / PLY (0x7A)
 - [x] BIT #imm (0x89)
 - [x] JMP (abs,X) (0x7C)
+- [x] Zero-page indirect (0x12,0x32,0x52,0x72,0x92,0xB2,0xD2,0xF2) — ORA/AND/EOR/ADC/STA/LDA/CMP/SBC
+- [x] TSB (0x04 zp, 0x0C abs) — Test and Set Bit
+- [x] TRB (0x14 zp, 0x1C abs) — Test and Reset Bit
 
 ## Emulator
-- [ ] `step()` cycle-accurate (instrukcja-level, cycle-by-cycle przyszłość)
+- [x] `step()` cycle-accurate (cycle-by-cycle przez state machine)
 - [x] `reset()` nie niszczy wektorów w pamięci
 - [x] Apple 1 PIA — `is_apple1` w MachineConfig, preset `apple1()`
 - [x] Martwe feature flags: usunięte z Cargo.toml
 
-## Testy (do rozszerzenia)
-- [ ] execute() testy dla każdego opcodu (obecnie ~28/56)
+## Testy
+- [x] execute() testy dla wszystkich 56 dokumentowanych opcodów
 - [x] Memory::Apple1Pia, Bus impl
-- [ ] Config::R65C02, Nmos6510/8502/6507
+- [x] Config::R65C02, Nmos6510/8502/6507, Apple1
 
 ## Drobne (zrobione)
 - [x] Zdublowany `MemoryAccess` trait — usunięty z 6502/memory, używa cpu_memory

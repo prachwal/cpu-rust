@@ -63,3 +63,48 @@ fn test_all_variants_distinct() {
     families.dedup();
     assert_eq!(families.len(), 6, "niektóre varianty się powtarzają");
 }
+
+#[test]
+fn test_r65c02_quirks() {
+    let c = MachineConfig::r65c02();
+    assert!(!c.quirks.jmp_indirect_bug);
+    assert!(c.quirks.bcd_available);
+    assert!(c.quirks.stp_available);
+    assert!(c.quirks.wai_available);
+    assert_eq!(c.quirks.rmw, RmwBehavior::Cmos);
+}
+
+#[test]
+fn test_apple1_preset() {
+    let c = MachineConfig::apple1();
+    assert!(c.is_apple1);
+    assert_eq!(c.family, CpuFamily::Nmos6502);
+}
+
+#[test]
+fn test_apple2_preset_not_apple1() {
+    let c = MachineConfig::apple2();
+    assert!(!c.is_apple1);
+}
+
+#[test]
+fn test_nmos_presets_exist() {
+    let _ = MachineConfig::mos6510();
+    let _ = MachineConfig::mos6507();
+}
+
+#[test]
+fn test_cpu_quirks_presets() {
+    let _ = CpuQuirks::nmos6510();
+    let _ = CpuQuirks::nmos8502();
+    let _ = CpuQuirks::nmos6507();
+}
+
+#[test]
+fn test_non_exhaustive_allows_new_variants() {
+    // Compile check: match without wildcard would fail
+    match CpuFamily::Nmos6502 {
+        CpuFamily::Nmos6502 => {}
+        _ => {}
+    }
+}

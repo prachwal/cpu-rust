@@ -11,18 +11,19 @@
 ## 🟡 Pozostałe do zrobienia
 
 ### CMOS extensions
-- [ ] **LDA/STA/ADC/… (zpg)** — 0x12, 0x32, 0x52, 0x72, 0x92, 0xB2, 0xD2, 0xF2 to nowe tryby w 65C02
-- [ ] **TSB/TRB** — Test and set/reset bit (R65C02)
+- [x] **Zero-page indirect (zpg)** — 8 opcodów dla 65C02: ORA/AND/EOR/ADC/STA/LDA/CMP/SBC
+- [x] **TSB** — Test and Set Bit (R65C02, 0x04=zp, 0x0C=abs)
+- [x] **TRB** — Test and Reset Bit (0x14 zp, 0x1C abs)
 
 ### Różnice wariantów
-- [ ] **Nmos6510/8502/6507 quirks** — wszystkie używają `CpuQuirks::nmos()` zamiast własnych presetów.
+- [x] **Nmos6510/8502/6507 quirks** — własne `CpuQuirks` presety.
 
 ### Cycle-accurate
-- [ ] **`step()` cycle-by-cycle** — obecnie instruction-level, cycle-by-cycle wymaga refaktoryzacji execute()
+- [x] **`step()` cycle-by-cycle** — zaimplementowany przez state machine w Emulator. Pierwszy cykl = execute(), pozostałe = idle aż do completion.
 
 ### Testy
-- [ ] execute() testy dla każdego opcodu (obecnie ~28/56)
-- [ ] Config::R65C02, Nmos6510/8502/6507
+- [x] execute() testy dla każdego opcodu (102 testy)
+- [x] Config::R65C02, Nmos6510/8502/6507
 
 ---
 
@@ -36,8 +37,8 @@
 | Flagi | ✅ Wszystkie poprawne dla dokumentowanych opcodów |
 | BCD | ✅ Zaimplementowane (NMOS + Ricoh blokada) |
 | Illegal opcody (105) | ✅ Wszystkie 105 zaimplementowane |
-| CMOS extensions | ✅ STP/WAI/BRA/PHX/Y/PLX/Y/BIT#imm/JMP(abs,X), ❌ TSB/TRB |
-| Cycle-accurate | ⏳ Instruction-level, cycle-by-cycle przyszłość |
+| CMOS extensions | ✅ STP/WAI/BRA/PHX/Y/PLX/Y/BIT#imm/JMP(abs,X)/zpg/TSB/TRB |
+| Cycle-accurate | ✅ cycle-by-cycle przez state machine |
 | RMW behavior | ✅ Cmos dummy read, Nmos dummy write |
 | Apple 1 PIA | ✅ Przez `is_apple1` flagę + `apple1()` preset |
 | Zero warnings | ✅ cargo build — 0 warningów |

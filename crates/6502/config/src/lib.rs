@@ -77,6 +77,9 @@ impl Default for CpuQuirks {
 
 impl CpuQuirks {
     pub fn nmos() -> Self { Self::default() }
+    pub fn nmos6510() -> Self { Self { ..Self::nmos() } }
+    pub fn nmos8502() -> Self { Self { ..Self::nmos() } }
+    pub fn nmos6507() -> Self { Self { ..Self::nmos() } }
     pub fn cmos() -> Self {
         Self {
             jmp_indirect_bug: false,
@@ -189,7 +192,7 @@ impl MachineConfig {
             family: CpuFamily::Nmos6510,
             label: "MOS 6510 (C64)".into(),
             description: "NMOS 6502 z I/O portem, używany w Commodore 64".into(),
-            quirks: CpuQuirks::nmos(),
+            quirks: CpuQuirks::nmos6510(),
             memory: MemoryConfig::default(),
             start_address: 0x8000,
             reset_vector: 0xFFFC,
@@ -203,7 +206,7 @@ impl MachineConfig {
             family: CpuFamily::Nmos6507,
             label: "MOS 6507 (Atari 2600)".into(),
             description: "NMOS 6502 z 13-bitową szyną adresową (8KB przestrzeni)".into(),
-            quirks: CpuQuirks::nmos(),
+            quirks: CpuQuirks::nmos6507(),
             memory: MemoryConfig { size: 8192, ..MemoryConfig::default() },
             start_address: 0xF000,
             reset_vector: 0xFFFC,

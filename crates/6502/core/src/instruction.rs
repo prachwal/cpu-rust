@@ -17,6 +17,7 @@ pub enum AddressingMode {
     IndirectX,
     IndirectY,
     Relative,
+    ZeroPageIndirect,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -84,6 +85,11 @@ fn fetch_operand(cpu: &Cpu, memory: &mut impl Bus, mode: AddressingMode, pc: u16
             let offset = memory.read(pc) as i8;
             (offset as u8, cpu.pc.wrapping_add(offset as u16), false)
         }
+        ZeroPageIndirect => {
+            let ptr = memory.read(pc) as u16;
+            let addr = memory.read_u16(ptr);
+            (memory.read(addr), addr, false)
+        }
     }
 }
 
@@ -121,6 +127,10 @@ fn fetch_address(cpu: &Cpu, memory: &mut impl Bus, mode: AddressingMode, pc: u16
             let hi = memory.read(base.wrapping_add(1) as u16) as u16;
             let ptr = (hi << 8) | lo;
             ptr.wrapping_add(cpu.y as u16)
+        }
+        ZeroPageIndirect => {
+            let ptr = memory.read(pc) as u16;
+            memory.read_u16(ptr)
         }
         _ => 0,
     }
@@ -674,6 +684,20 @@ pub fn execute(cpu: &mut Cpu, memory: &mut impl Bus) -> u8 {
             0xFA => { cpu.x = cpu.pull_stack(memory); update_nz!(cpu, cpu.x); return 4; }
             0x7A => { cpu.y = cpu.pull_stack(memory); update_nz!(cpu, cpu.y); return 4; }
             0x7C => { let base=memory.read_u16(op_pc); let ptr=base.wrapping_add(cpu.x as u16); let a=memory.read_u16(ptr); cpu.pc=a; return 6; }
+            // 65C02 zero-page indirect (zp)
+            0x12 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_ora(cpu,v); return 5; }
+            0x32 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_and(cpu,v); return 5; }
+            0x52 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_eor(cpu,v); return 5; }
+            0x72 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_adc(cpu,v); return 5; }
+            0x92 => { let a=fetch_address(cpu,memory,ZeroPageIndirect,op_pc); memory.write(a, cpu.a); return 5; }
+            0xB2 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_lda(cpu,v); return 5; }
+            0xD2 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_cmp(cpu,v); return 5; }
+             0xF2 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_sbc(cpu,v); return 5; }
+             // R65C02 TSB/TRB — override *NOP on 65C02 variants
+             0x04 => { let a=fetch_address(cpu,memory,info.mode,op_pc); let v=memory.read(a); cpu.sr.set_z((cpu.a & v) == 0); let r=v|cpu.a; memory.write(a,r); cpu.sr.set_n(r & 0x80 != 0); return 5; }
+            0x0C => { let a=fetch_address(cpu,memory,info.mode,op_pc); let v=memory.read(a); cpu.sr.set_z((cpu.a & v) == 0); let r=v|cpu.a; memory.write(a,r); cpu.sr.set_n(r & 0x80 != 0); return 6; }
+              0x14 => { let a=fetch_address(cpu,memory,ZeroPage,op_pc); let v=memory.read(a); cpu.sr.set_z((cpu.a & v) == 0); let r=v&!cpu.a; memory.write(a,r); cpu.sr.set_n(r & 0x80 != 0); return 5; }
+              0x1C => { let a=fetch_address(cpu,memory,Absolute,op_pc); let v=memory.read(a); cpu.sr.set_z((cpu.a & v) == 0); let r=v&!cpu.a; memory.write(a,r); cpu.sr.set_n(r & 0x80 != 0); return 6; }
             _ => {}
         }
     }
@@ -688,6 +712,30 @@ pub fn execute(cpu: &mut Cpu, memory: &mut impl Bus) -> u8 {
         return 2;
     }
 
+    // CMOS/65C02 extensions — override NMOS illegal/*NOP opcodes
+    // Must check BEFORE undocumented_ops gate (which blocks *-prefixed names)
+    if matches!(cpu.config.family, CpuFamily::W65C02 | CpuFamily::R65C02) {
+        if opcode == 0xCB { cpu.waiting = true; return 2; }
+        if opcode == 0xDB { cpu.stopped = true; return 2; }
+        match opcode {
+            0x80 => { let (o,_,_)=fetch_operand(cpu,memory,Relative,op_pc); return exec_branch(cpu,o,true); }
+            0x89 => { let (v,_,_)=fetch_operand(cpu,memory,Immediate,op_pc); exec_bit(cpu,v); return 2; }
+            0xDA => { cpu.push_stack(cpu.x, memory); return 3; }
+            0x5A => { cpu.push_stack(cpu.y, memory); return 3; }
+            0xFA => { cpu.x = cpu.pull_stack(memory); update_nz!(cpu, cpu.x); return 4; }
+            0x7A => { cpu.y = cpu.pull_stack(memory); update_nz!(cpu, cpu.y); return 4; }
+            0x7C => { let base=memory.read_u16(op_pc); let ptr=base.wrapping_add(cpu.x as u16); let a=memory.read_u16(ptr); cpu.pc=a; return 6; }
+            0x12 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_ora(cpu,v); return 5; }
+            0x32 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_and(cpu,v); return 5; }
+            0x52 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_eor(cpu,v); return 5; }
+            0x72 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_adc(cpu,v); return 5; }
+            0x92 => { let a=fetch_address(cpu,memory,ZeroPageIndirect,op_pc); memory.write(a, cpu.a); return 5; }
+            0xB2 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_lda(cpu,v); return 5; }
+            0xD2 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_cmp(cpu,v); return 5; }
+            0xF2 => { let (v,_,_)=fetch_operand(cpu,memory,ZeroPageIndirect,op_pc); exec_sbc(cpu,v); return 5; }
+            _ => {}
+        }
+    }
     // If undocumented ops disabled, skip them as NOPs
     if !cpu.config.has_undocumented_ops() && info.name.as_bytes()[0] == b'*' {
         let _ = fetch_operand(cpu, memory, info.mode, op_pc);
@@ -744,6 +792,9 @@ pub fn execute(cpu: &mut Cpu, memory: &mut impl Bus) -> u8 {
         0xB8 => { flg_clv(cpu); 2 } 0x38 => { flg_sec(cpu); 2 } 0xF8 => { flg_sed(cpu); 2 }
         0x78 => { flg_sei(cpu); 2 } 0xEA => 2,
          0x40 => { exec_rti(cpu,memory); 6 }
+         // TSB for 65C02 (0x04=zp, 0x0C=abs — *NOP on NMOS)
+         0x04 => { if !cpu.config.quirks.stp_available { let _=fetch_operand(cpu,memory,ZeroPage,op_pc); return 3; } let a=fetch_address(cpu,memory,ZeroPage,op_pc); let v=memory.read(a); cpu.sr.set_z((cpu.a & v) == 0); let r=v|cpu.a; memory.write(a,r); cpu.sr.set_n(r & 0x80 != 0); 5 }
+         0x0C => { if !cpu.config.quirks.stp_available { let _=fetch_operand(cpu,memory,Absolute,op_pc); return 4; } let a=fetch_address(cpu,memory,Absolute,op_pc); let v=memory.read(a); cpu.sr.set_z((cpu.a & v) == 0); let r=v|cpu.a; memory.write(a,r); cpu.sr.set_n(r & 0x80 != 0); 6 }
          // *SLO — ASL memory then ORA result with A
          0x03|0x07|0x0F|0x13|0x17|0x1B|0x1F => { let a=fetch_address(cpu,memory,info.mode,op_pc); exec_slo(cpu,memory,a); info.cycles }
          // *RLA — ROL memory then AND result with A

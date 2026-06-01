@@ -53,6 +53,12 @@ pub struct EmulatorState {
     pub config: MachineConfig,
 }
 
+/// Cycle-accurate execution state
+enum StepState {
+    Idle,
+    Running(u8), // remaining cycles
+}
+
 /// Main emulator structure
 ///
 /// This is the primary interface for using the 6502 emulator.
@@ -63,9 +69,8 @@ pub struct Emulator {
     cpu: Cpu,
     memory: Memory,
     config: MachineConfig,
-    
-    // For cycle-accurate mode
     total_cycles: u64,
+    step_state: StepState,
 }
 
 // Non-WASM methods (generic over Bus)
@@ -129,6 +134,7 @@ impl Emulator {
             memory: Memory::new(&config),
             config,
             total_cycles: 0,
+            step_state: StepState::Idle,
         }
     }
     
@@ -152,20 +158,43 @@ impl Emulator {
     
     /// Execute one instruction (one opcode)
     pub fn tick(&mut self) -> u8 {
-        if self.cpu.halted || self.cpu.waiting || self.cpu.stopped {
-            return 0;
+        let mut total: u8 = 0;
+        loop {
+            let c = self.step();
+            total += c;
+            if c == 0 || matches!(self.step_state, StepState::Idle) {
+                return total;
+            }
         }
-
-        let cycles = instruction::execute(&mut self.cpu, &mut self.memory);
-        self.cpu.instructions += 1;
-        self.total_cycles += cycles as u64;
-        cycles
     }
     
     /// Execute a single cycle (cycle-accurate mode)
+    /// Returns 1 if a cycle was executed, 0 if CPU is halted/waiting/stopped.
     pub fn step(&mut self) -> u8 {
-        let cycles = self.tick();
-        cycles
+        if self.cpu.halted || self.cpu.waiting || self.cpu.stopped {
+            self.step_state = StepState::Idle;
+            return 0;
+        }
+
+        match self.step_state {
+            StepState::Idle => {
+                let cycles = instruction::execute(&mut self.cpu, &mut self.memory);
+                self.cpu.instructions += 1;
+                self.total_cycles += 1;
+                if cycles > 1 {
+                    self.step_state = StepState::Running(cycles - 1);
+                }
+                1
+            }
+            StepState::Running(ref mut remaining) => {
+                *remaining -= 1;
+                self.total_cycles += 1;
+                if *remaining == 0 {
+                    self.step_state = StepState::Idle;
+                }
+                1
+            }
+        }
     }
     
     /// Execute multiple cycles
@@ -488,6 +517,8 @@ impl Emulator {
                     format!("{} (${:02X}),Y", info.name, self.memory.read(addr + 1)),
                 instruction::AddressingMode::Relative =>
                     format!("{} ${:04X}", info.name, addr.wrapping_add(2).wrapping_add(self.memory.read(addr + 1) as i8 as u16)),
+                instruction::AddressingMode::ZeroPageIndirect =>
+                    format!("{} (${:02X})", info.name, self.memory.read(addr + 1)),
             }
         } else {
             format!(".byte ${:02X}", opcode)

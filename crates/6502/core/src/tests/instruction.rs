@@ -360,6 +360,52 @@ fn test_tax() {
     }
 
     #[test]
+    fn test_cmos_zp_indirect_lda() {
+        let mut cpu = Cpu::new(MachineConfig::w65c02());
+        let mut mem = Memory::new(&MachineConfig::w65c02());
+        mem.write(0x10, 0x00); mem.write(0x11, 0x20); // pointer $10 → $2000
+        mem.write(0x2000, 0x42);
+        mem.write(cpu.pc, 0xB2); mem.write(cpu.pc + 1, 0x10);
+        execute(&mut cpu, &mut mem);
+        assert_eq!(cpu.a, 0x42);
+    }
+
+    #[test]
+    fn test_cmos_zp_indirect_sta() {
+        let mut cpu = Cpu::new(MachineConfig::w65c02());
+        let mut mem = Memory::new(&MachineConfig::w65c02());
+        mem.write(0x10, 0x00); mem.write(0x11, 0x20);
+        cpu.a = 0x99;
+        mem.write(cpu.pc, 0x92); mem.write(cpu.pc + 1, 0x10);
+        execute(&mut cpu, &mut mem);
+        assert_eq!(mem.read(0x2000), 0x99);
+    }
+
+    #[test]
+    fn test_cmos_zp_indirect_ora() {
+        let mut cpu = Cpu::new(MachineConfig::w65c02());
+        let mut mem = Memory::new(&MachineConfig::w65c02());
+        cpu.a = 0xF0;
+        mem.write(0x10, 0x00); mem.write(0x11, 0x20);
+        mem.write(0x2000, 0x0F);
+        mem.write(cpu.pc, 0x12); mem.write(cpu.pc + 1, 0x10);
+        execute(&mut cpu, &mut mem);
+        assert_eq!(cpu.a, 0xFF);
+    }
+
+    #[test]
+    fn test_cmos_zp_indirect_adc() {
+        let mut cpu = Cpu::new(MachineConfig::w65c02());
+        let mut mem = Memory::new(&MachineConfig::w65c02());
+        cpu.a = 0x01;
+        mem.write(0x10, 0x00); mem.write(0x11, 0x20);
+        mem.write(0x2000, 0x02);
+        mem.write(cpu.pc, 0x72); mem.write(cpu.pc + 1, 0x10);
+        execute(&mut cpu, &mut mem);
+        assert_eq!(cpu.a, 0x03);
+    }
+
+    #[test]
     fn test_adc_carry() {
     let (mut cpu, mut mem) = setup();
     cpu.a = 0xFF;
@@ -450,4 +496,237 @@ fn test_beq_not_taken() {
     let pc = cpu.pc;
     execute(&mut cpu, &mut mem);
     assert_eq!(cpu.pc, pc + 2); // not taken, PC += 2
+}
+
+// ── Standard documented opcode tests ──
+
+#[test]
+fn test_sta_zeropage() {
+    let (mut cpu, mut mem) = setup(); cpu.a = 0x42;
+    mem.write(cpu.pc, 0x85); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(mem.read(0x80), 0x42);
+}
+#[test]
+fn test_stx_zeropage() {
+    let (mut cpu, mut mem) = setup(); cpu.x = 0x99;
+    mem.write(cpu.pc, 0x86); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(mem.read(0x80), 0x99);
+}
+#[test]
+fn test_sty_zeropage() {
+    let (mut cpu, mut mem) = setup(); cpu.y = 0x77;
+    mem.write(cpu.pc, 0x84); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(mem.read(0x80), 0x77);
+}
+#[test]
+fn test_ldx_immediate() {
+    let (mut cpu, mut mem) = setup();
+    mem.write(cpu.pc, 0xA2); mem.write(cpu.pc + 1, 0x42);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.x, 0x42);
+}
+#[test]
+fn test_ldy_immediate() {
+    let (mut cpu, mut mem) = setup();
+    mem.write(cpu.pc, 0xA0); mem.write(cpu.pc + 1, 0x77);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.y, 0x77);
+}
+#[test]
+fn test_pha_pla() {
+    let (mut cpu, mut mem) = setup(); cpu.a = 0x55;
+    mem.write(cpu.pc, 0x48);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.sp, 0xFE);
+    cpu.a = 0x00;
+    mem.write(cpu.pc, 0x68);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.a, 0x55);
+}
+#[test]
+fn test_php_plp() {
+    let (mut cpu, mut mem) = setup();
+    cpu.sr.set_z(true); cpu.sr.set_c(true);
+    mem.write(cpu.pc, 0x08);
+    execute(&mut cpu, &mut mem);
+    cpu.sr.set_z(false); cpu.sr.set_c(false);
+    mem.write(cpu.pc, 0x28);
+    execute(&mut cpu, &mut mem);
+    assert!(cpu.sr.z()); assert!(cpu.sr.c());
+}
+#[test]
+fn test_flag_instructions() {
+    let (mut cpu, mut mem) = setup();
+    cpu.sr.set_c(true); mem.write(cpu.pc, 0x18); execute(&mut cpu, &mut mem); assert!(!cpu.sr.c());
+    cpu.sr.set_d(true); mem.write(cpu.pc, 0xD8); execute(&mut cpu, &mut mem); assert!(!cpu.sr.d());
+    cpu.sr.set_i(true); mem.write(cpu.pc, 0x58); execute(&mut cpu, &mut mem); assert!(!cpu.sr.i());
+    cpu.sr.set_v(true); mem.write(cpu.pc, 0xB8); execute(&mut cpu, &mut mem); assert!(!cpu.sr.v());
+    mem.write(cpu.pc, 0x38); execute(&mut cpu, &mut mem); assert!(cpu.sr.c());
+    mem.write(cpu.pc, 0xF8); execute(&mut cpu, &mut mem); assert!(cpu.sr.d());
+    mem.write(cpu.pc, 0x78); execute(&mut cpu, &mut mem); assert!(cpu.sr.i());
+}
+#[test]
+fn test_inx_dex() {
+    let (mut cpu, mut mem) = setup(); cpu.x = 0x05;
+    mem.write(cpu.pc, 0xE8); execute(&mut cpu, &mut mem); assert_eq!(cpu.x, 0x06);
+    mem.write(cpu.pc, 0xCA); execute(&mut cpu, &mut mem); assert_eq!(cpu.x, 0x05);
+}
+#[test]
+fn test_iny_dey() {
+    let (mut cpu, mut mem) = setup(); cpu.y = 0x05;
+    mem.write(cpu.pc, 0xC8); execute(&mut cpu, &mut mem); assert_eq!(cpu.y, 0x06);
+    mem.write(cpu.pc, 0x88); execute(&mut cpu, &mut mem); assert_eq!(cpu.y, 0x05);
+}
+#[test]
+fn test_inc_dec_memory() {
+    let (mut cpu, mut mem) = setup();
+    mem.write(0x80, 0x05);
+    mem.write(cpu.pc, 0xE6); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem); assert_eq!(mem.read(0x80), 0x06);
+    mem.write(cpu.pc, 0xC6); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem); assert_eq!(mem.read(0x80), 0x05);
+}
+#[test]
+fn test_tsx_txs() {
+    let (mut cpu, mut mem) = setup(); cpu.sp = 0xAB; cpu.x = 0xCD;
+    mem.write(cpu.pc, 0xBA); execute(&mut cpu, &mut mem); assert_eq!(cpu.x, 0xAB);
+    cpu.x = 0xEF;
+    mem.write(cpu.pc, 0x9A); execute(&mut cpu, &mut mem); assert_eq!(cpu.sp, 0xEF);
+}
+#[test]
+fn test_txa_tya() {
+    let (mut cpu, mut mem) = setup(); cpu.x = 0x12; cpu.a = 0x00;
+    mem.write(cpu.pc, 0x8A); execute(&mut cpu, &mut mem); assert_eq!(cpu.a, 0x12);
+    cpu.y = 0x34;
+    mem.write(cpu.pc, 0x98); execute(&mut cpu, &mut mem); assert_eq!(cpu.a, 0x34);
+}
+#[test]
+fn test_asl_accumulator() {
+    let (mut cpu, mut mem) = setup(); cpu.a = 0x80;
+    mem.write(cpu.pc, 0x0A);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.a, 0x00); assert!(cpu.sr.c());
+}
+#[test]
+fn test_lsr_accumulator() {
+    let (mut cpu, mut mem) = setup(); cpu.a = 0x01;
+    mem.write(cpu.pc, 0x4A);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.a, 0x00); assert!(cpu.sr.c());
+}
+#[test]
+fn test_rol_accumulator() {
+    let (mut cpu, mut mem) = setup(); cpu.a = 0x80; cpu.sr.set_c(true);
+    mem.write(cpu.pc, 0x2A);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.a, 0x01);
+}
+#[test]
+fn test_ror_accumulator() {
+    let (mut cpu, mut mem) = setup(); cpu.a = 0x01; cpu.sr.set_c(true);
+    mem.write(cpu.pc, 0x6A);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.a, 0x80);
+}
+#[test]
+fn test_asl_memory() {
+    let (mut cpu, mut mem) = setup();
+    mem.write(0x80, 0x40);
+    mem.write(cpu.pc, 0x06); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(mem.read(0x80), 0x80);
+}
+#[test]
+fn test_bit_zeropage() {
+    let (mut cpu, mut mem) = setup(); cpu.a = 0x80;
+    mem.write(0x80, 0xC0);
+    mem.write(cpu.pc, 0x24); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem);
+    assert!(cpu.sr.n()); assert!(cpu.sr.v()); assert!(!cpu.sr.z());
+}
+#[test]
+fn test_cpx_cpy() {
+    let (mut cpu, mut mem) = setup(); cpu.x = 0x05; cpu.y = 0x0A;
+    mem.write(cpu.pc, 0xE0); mem.write(cpu.pc + 1, 0x05); // CPX #5
+    execute(&mut cpu, &mut mem); assert!(cpu.sr.z());
+    mem.write(cpu.pc + 2, 0xC0); mem.write(cpu.pc + 3, 0x0A); // CPY #10
+    execute(&mut cpu, &mut mem); assert!(cpu.sr.z());
+}
+#[test]
+fn test_branch_taken_and_not() {
+    let (mut cpu, mut mem) = setup();
+    // BMI taken (N=1)
+    cpu.sr.set_n(true);
+    mem.write(cpu.pc, 0x30); mem.write(cpu.pc + 1, 0x05); let pc=cpu.pc;
+    execute(&mut cpu, &mut mem); assert_eq!(cpu.pc, pc + 2 + 5);
+    // BPL not taken (N=1)
+    let pc2=cpu.pc;
+    mem.write(pc2, 0x10); mem.write(pc2 + 1, 0x10);
+    execute(&mut cpu, &mut mem); assert_eq!(cpu.pc, pc2 + 2);
+}
+#[test]
+fn test_jmp_indirect() {
+    let (mut cpu, mut mem) = setup();
+    mem.write(0x1000, 0x00); mem.write(0x1001, 0x30);
+    mem.write(cpu.pc, 0x6C); mem.write(cpu.pc + 1, 0x00); mem.write(cpu.pc + 2, 0x10);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.pc, 0x3000);
+}
+
+#[test]
+fn test_tsb_zeropage() {
+    let mut cpu = Cpu::new(MachineConfig::w65c02());
+    let mut mem = Memory::new(&MachineConfig::w65c02());
+    cpu.a = 0x06;
+    mem.write(0x80, 0x02);
+    mem.write(cpu.pc, 0x04); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(mem.read(0x80), 0x06);
+    assert!(!cpu.sr.z());
+}
+#[test]
+fn test_trb_zeropage() {
+    let mut cpu = Cpu::new(MachineConfig::w65c02());
+    let mut mem = Memory::new(&MachineConfig::w65c02());
+    cpu.a = 0x06;
+    mem.write(0x80, 0x0F);
+    mem.write(cpu.pc, 0x14); mem.write(cpu.pc + 1, 0x80);
+    execute(&mut cpu, &mut mem);
+    assert_eq!(mem.read(0x80), 0x09);
+    assert!(!cpu.sr.z());
+}
+#[test]
+fn test_trb_sets_zero_flag() {
+    let mut cpu = Cpu::new(MachineConfig::w65c02());
+    let mut mem = Memory::new(&MachineConfig::w65c02());
+    cpu.a = 0x00;
+    mem.write(0x80, 0xFF);
+    mem.write(cpu.pc, 0x14); mem.write(cpu.pc + 1, 0x80);
+    let cyc = execute(&mut cpu, &mut mem);
+    assert_eq!(cyc, 5, "TRB zp = 5 cycles");
+    assert!(cpu.sr.z(), "Z should be set (A=0)");
+}
+#[test]
+#[test]
+fn test_cmos_phx_works() {
+    let mut cpu = Cpu::new(MachineConfig::w65c02());
+    let mut mem = Memory::new(&MachineConfig::w65c02());
+    mem.write(cpu.pc, 0xDA); // PHX
+    execute(&mut cpu, &mut mem);
+    assert_eq!(cpu.sp, 0xFE);
+}
+#[test]
+fn test_tsb_zeropage_sets_z() {
+    let mut cpu = Cpu::new(MachineConfig::w65c02());
+    let mut mem = Memory::new(&MachineConfig::w65c02());
+    cpu.a = 0x00;
+    mem.write(cpu.pc, 0x04); mem.write(cpu.pc + 1, 0x80);
+    mem.write(0x80, 0xFF);
+    let cyc = execute(&mut cpu, &mut mem);
+    assert_eq!(cyc, 5, "TSB zp should be 5 cycles, got {}", cyc);
+    assert_eq!(mem.read(0x80), 0xFF);
+    assert!(cpu.sr.z(), "Z should be set");
 }
