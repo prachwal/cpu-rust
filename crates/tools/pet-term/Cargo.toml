@@ -1,0 +1,9 @@
+[package]
+name = "pet-term"
+version = "0.1.0"
+edition = "2021"
+description = "Interactive Commodore PET 2001 terminal emulator"
+
+[dependencies]
+pet-core = { path = "../../machines/pet" }
+crossterm = "0.28"
