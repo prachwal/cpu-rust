@@ -213,6 +213,13 @@ fn main() {
     eprintln!("[pet-window] Boot: running 500000 instructions...");
     pet.run(500_000);
     eprintln!("[pet-window] Boot: PC=${:04X}", pet.get_pc());
+    {
+        let ram = unsafe { std::slice::from_raw_parts(pet.ram_ptr(), 256) };
+        let col = ram[0x00C6];
+        let screen_ptr = ram[0x00C4] as u16 | ((ram[0x00C5] as u16) << 8);
+        eprintln!("[pet-window] Boot: cursor col={col} screen_ptr=${screen_ptr:04X} (valid={})", 
+            (0x8000u16..0x8000+1000).contains(&screen_ptr));
+    }
 
     if args.smoke {
         smoke_test(&roms);
