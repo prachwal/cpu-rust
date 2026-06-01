@@ -110,6 +110,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "cpu-segment"
+version = "0.1.0"
+
+[[package]]
 name = "crossterm"
 version = "0.28.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -160,6 +164,28 @@ name = "itoa"
 version = "1.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
+
+[[package]]
+name = "kim1"
+version = "0.1.0"
+dependencies = [
+ "cpu-bus",
+ "cpu-display",
+ "cpu-keyboard",
+ "cpu-segment",
+ "mos6502-config",
+ "mos6502-core",
+]
+
+[[package]]
+name = "kim1-term"
+version = "0.1.0"
+dependencies = [
+ "cpu-bus",
+ "cpu-segment",
+ "crossterm",
+ "kim1",
+]
 
 [[package]]
 name = "libc"

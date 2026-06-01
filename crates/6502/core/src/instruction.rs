@@ -832,11 +832,9 @@ pub fn execute(cpu: &mut Cpu, memory: &mut impl Bus) -> u8 {
          // *NOP Immediate — read byte, 2 cycles
          0x80 | 0x82 | 0x89 | 0xC2 | 0xE2 => { let _ = fetch_operand(cpu,memory,Immediate,op_pc); 2 }
          // *NOP ZeroPage — 3 cycles
-         0x04 | 0x44 | 0x64 => { let _ = fetch_operand(cpu,memory,ZeroPage,op_pc); 3 }
+         0x44 | 0x64 => { let _ = fetch_operand(cpu,memory,ZeroPage,op_pc); 3 }
          // *NOP ZeroPage,X — 4 cycles
          0x14 | 0x34 | 0x54 | 0x74 | 0xD4 | 0xF4 => { let _ = fetch_operand(cpu,memory,ZeroPageX,op_pc); 4 }
-         // *NOP Absolute — 4 cycles
-         0x0C => { let _ = fetch_operand(cpu,memory,Absolute,op_pc); 4 }
          // *NOP Absolute,X — 4 cycles (+1 page cross)
          0x1C | 0x3C | 0x5C | 0x7C | 0xDC | 0xFC => { let (_,_,x)=fetch_operand(cpu,memory,AbsoluteX,op_pc); 4 + if x { 1 } else { 0 } }
         _ => info.cycles

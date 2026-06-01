@@ -12,6 +12,7 @@ crates/
     display/         → cpu-display: bufor pikseli (width, height, get/set pixel)
     keyboard/        → cpu-keyboard: 16-klawiszowy stan
     memory/          → cpu-memory: płaska pamięć Vec<u8> + MemoryAccess trait
+    segment/         → cpu-segment: 7-segment LED patterns + pixel rendering
 
   6502/
     config/          → mos6502-config: MachineConfig, CpuFamily, CpuQuirks

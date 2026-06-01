@@ -1,0 +1,17 @@
+[package]
+name = "kim1"
+version = "0.1.0"
+edition = "2021"
+description = "KIM-1 microcomputer emulator — 6502 + 6530 RIOT + 7-segment LED + hex keypad"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+cpu-bus = { path = "../../cpu/bus" }
+cpu-display = { path = "../../cpu/display" }
+cpu-keyboard = { path = "../../cpu/keyboard" }
+cpu-segment = { path = "../../cpu/segment" }
+mos6502-config = { path = "../../6502/config" }
+mos6502-core = { path = "../../6502/core" }
+

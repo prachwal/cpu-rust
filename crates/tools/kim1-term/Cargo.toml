@@ -1,0 +1,11 @@
+[package]
+name = "kim1-term"
+version = "0.1.0"
+edition = "2021"
+description = "Interactive KIM-1 terminal — hex keypad + 7-segment LED display"
+
+[dependencies]
+cpu-bus = { path = "../../cpu/bus" }
+cpu-segment = { path = "../../cpu/segment" }
+kim1 = { path = "../../machines/kim1" }
+crossterm = "0.28"
