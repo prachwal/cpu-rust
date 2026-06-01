@@ -13,8 +13,8 @@ const BORDER: usize = 8;
 const WINDOW_W: usize = SCREEN_W + BORDER * 2;
 const WINDOW_H: usize = SCREEN_H + BORDER * 2;
 const SCALE: usize = 2;
-const TICK_BATCH: u32 = 5_000;
-const INPUT_TICK_BATCH: u32 = 5_000;
+const TICK_BATCH: u32 = 16_666;
+const INPUT_TICK_BATCH: u32 = 16_666;
 const CONTROL_DELAY: Duration = Duration::from_millis(40);
 
 const CONTROL_KEYS: &[(Key, u8, &str)] = &[
