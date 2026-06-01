@@ -5,6 +5,17 @@ fn make_machine() -> Eater6502 {
     Eater6502::new(rom)
 }
 
+fn drain_prompt(machine: &mut Eater6502) {
+    // Monitor sends '>' after init; consume it before testing echo
+    for _ in 0..2000 { machine.tick(); }
+    let tx = machine.bus.read_transmitted();
+    if tx == Some(b'>') {
+        // consume the prompt
+    }
+    // also drain any remaining prompt bytes
+    while machine.bus.drain_tx().len() > 0 {}
+}
+
 #[test]
 fn test_eater_6502_boots() {
     let mut machine = make_machine();
@@ -24,24 +35,19 @@ fn test_eater_6502_memory() {
 #[test]
 fn test_eater_6502_acia_echo() {
     let mut machine = make_machine();
+    drain_prompt(&mut machine);
 
-    for _ in 0..2000 { machine.tick(); }
-
-    // Send 'A' and run
     machine.bus.receive_byte(0x41);
     for _ in 0..5000 { machine.tick(); }
 
-    // Should see 'A' echoed back
     let tx = machine.bus.read_transmitted();
-    assert!(tx.is_some(), "Should have transmitted a byte");
     assert_eq!(tx, Some(0x41), "Should echo 'A'");
 }
 
 #[test]
 fn test_eater_6502_acia_echo_cr_lf() {
     let mut machine = make_machine();
-
-    for _ in 0..2000 { machine.tick(); }
+    drain_prompt(&mut machine);
 
     machine.bus.receive_byte(0x0D);
     for _ in 0..10000 { machine.tick(); }
@@ -55,7 +61,7 @@ fn test_eater_6502_acia_echo_cr_lf() {
 #[test]
 fn test_eater_6502_acia_multiple_echo() {
     let mut machine = make_machine();
-    for _ in 0..2000 { machine.tick(); }
+    drain_prompt(&mut machine);
 
     for &ch in b"HELLO" {
         machine.bus.receive_byte(ch);
