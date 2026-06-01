@@ -1,0 +1,14 @@
+[package]
+name = "eater-6502"
+version = "0.1.0"
+edition = "2021"
+description = "Ben Eater-style 6502 computer — 6502 + RAM + ACIA 6551 + WozMon"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+cpu-bus = { path = "../../cpu/bus" }
+acia-6551 = { path = "../../chips/acia-6551" }
+mos6502-core = { path = "../../6502/core" }
+mos6502-config = { path = "../../6502/config" }
