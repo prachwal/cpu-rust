@@ -818,12 +818,14 @@ impl Display {
                         let fg = if cell_idx < self.char_fg.len() { self.char_fg[cell_idx] } else { 1 };
                         let bg = if cell_idx < self.char_bg.len() { self.char_bg[cell_idx] } else { 0 };
 
-                        let mapped = self.mapping.map(ch);
+                        let inverse = ch & 0x80 != 0;
+                        let mapped = self.mapping.map(ch & 0x7F);
 
                         for cy in 0..char_dy {
                             let row_bits = font.row_bits(mapped, cy as u8) as u16;
                             for cx in 0..char_dx {
                                 let pixel_set = (row_bits >> (7 - cx)) & 1 != 0;
+                                let pixel_set = if inverse { !pixel_set } else { pixel_set };
                                 let color_idx = if pixel_set { fg } else { bg };
                                 let (r, g, b, a) = self.resolve_color(color_idx);
 
