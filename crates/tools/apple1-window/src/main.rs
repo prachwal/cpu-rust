@@ -3,8 +3,8 @@ use std::time::Duration;
 
 use minifb::{Key, Window, WindowOptions};
 
-const W: usize = 280; // 40 cols × 7 px
-const H: usize = 192; // 24 rows × 8 px
+const W: usize = 200; // 40 cols × 5 px
+const H: usize = 168; // 24 rows × 7 px
 const SCALE: usize = 3;
 const TICK_BATCH: u32 = 5000;
 const KEY_MAP: &[(Key, u8)] = &[
@@ -28,8 +28,8 @@ const KEY_MAP: &[(Key, u8)] = &[
 
 fn main() {
     // ── 1. Font ──
-    eprintln!("[apple1-window] Font: loading built-in ASCII 8×8...");
-    let font = cpu_display::Font::ascii_8x8();
+    eprintln!("[apple1-window] Font: loading Apple 1 5×7...");
+    let font = cpu_display::Font::apple1_5x7();
     eprintln!("[apple1-window] Font: {} chars (${:02X}-${:02X}), {}×{} px",
         font.count, font.first, font.last, font.char_width, font.char_height);
 

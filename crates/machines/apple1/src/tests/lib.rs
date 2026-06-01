@@ -5,7 +5,7 @@ fn test_display_output_non_black() {
     let mut emu = Apple1Emulator::new();
     emu.load_roms(&[], &[]);
     let gfx = emu.take_gfx();
-    assert_eq!(gfx.len(), 280 * 192 * 4);
+    assert_eq!(gfx.len(), 200 * 168 * 4);
 }
 
 #[test]

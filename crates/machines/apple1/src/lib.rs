@@ -18,7 +18,7 @@ struct Apple1Pia {
 impl Apple1Pia {
     fn new() -> Self {
         let cfg = DisplayConfig::apple1();
-        let font = Font::ascii_8x8();
+        let font = Font::apple1_5x7();
         Apple1Pia {
             pia: Pia6821::new(),
             keyboard: VecDeque::new(),
