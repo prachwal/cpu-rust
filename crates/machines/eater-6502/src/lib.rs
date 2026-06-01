@@ -1,7 +1,8 @@
 pub mod rom;
 
+use acia_6551::{Acia6551, SR_RX_FULL};
 use cpu_bus::Bus;
-use acia_6551::Acia6551;
+use cpu_machine::{Machine, SerialMachine};
 
 const RAM_SIZE: usize = 0x4000; // 16KB RAM
 const ACIA_BASE: u16 = 0x6000;
@@ -100,6 +101,26 @@ impl Eater6502 {
     }
 
     pub fn get_pc(&self) -> u16 { self.cpu.get_register_pc() }
+}
+
+impl Machine for Eater6502 {
+    fn tick(&mut self) { self.cpu.tick_bus(&mut self.bus); }
+    fn pc(&self) -> u16 { self.cpu.get_register_pc() }
+    fn sp(&self) -> u8 { self.cpu.get_register_sp() }
+    fn a(&self) -> u8 { self.cpu.get_register_a() }
+    fn x(&self) -> u8 { self.cpu.get_register_x() }
+    fn y(&self) -> u8 { self.cpu.get_register_y() }
+    fn p(&self) -> u8 { self.cpu.get_status_register() }
+    fn cycles(&self) -> u64 { self.cpu.get_cycle_count() }
+    fn instructions(&self) -> u64 { self.cpu.get_instruction_count() }
+}
+
+impl SerialMachine for Eater6502 {
+    fn serial_send(&mut self, byte: u8) { self.bus.receive_byte(byte); }
+    fn serial_recv(&mut self) -> Option<u8> { self.bus.read_transmitted() }
+    fn serial_send_ready(&mut self) -> bool {
+        self.bus.acia.status() & SR_RX_FULL == 0
+    }
 }
 
 #[cfg(test)]

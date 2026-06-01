@@ -1,0 +1,5 @@
+[package]
+name = "cpu-machine"
+version = "0.1.0"
+edition = "2021"
+description = "Universal Machine trait for emulators"

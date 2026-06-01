@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "acia-6551"
+version = "0.1.0"
+
+[[package]]
 name = "apple1-core"
 version = "0.1.0"
 dependencies = [
@@ -19,6 +23,17 @@ version = "0.1.0"
 dependencies = [
  "apple1-core",
  "crossterm",
+]
+
+[[package]]
+name = "atty"
+version = "0.2.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9b39be18770d11421cdb1b9947a45dd3f37e93092cbf377614828a319d5fee8"
+dependencies = [
+ "hermit-abi",
+ "libc",
+ "winapi",
 ]
 
 [[package]]
@@ -103,6 +118,10 @@ name = "cpu-keyboard"
 version = "0.1.0"
 
 [[package]]
+name = "cpu-machine"
+version = "0.1.0"
+
+[[package]]
 name = "cpu-memory"
 version = "0.1.0"
 dependencies = [
@@ -139,6 +158,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "eater-6502"
+version = "0.1.0"
+dependencies = [
+ "acia-6551",
+ "cpu-bus",
+ "cpu-machine",
+ "mos6502-config",
+ "mos6502-core",
+]
+
+[[package]]
 name = "errno"
 version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -157,6 +187,15 @@ dependencies = [
  "cfg-if",
  "libc",
  "wasi",
+]
+
+[[package]]
+name = "hermit-abi"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -448,6 +487,17 @@ dependencies = [
  "serde",
  "serde_core",
  "zmij",
+]
+
+[[package]]
+name = "serial-term"
+version = "0.1.0"
+dependencies = [
+ "atty",
+ "cpu-machine",
+ "crossterm",
+ "eater-6502",
+ "libc",
 ]
 
 [[package]]

@@ -5,6 +5,7 @@ members = [
     "crates/cpu/chip8",
     "crates/cpu/display",
     "crates/cpu/keyboard",
+    "crates/cpu/machine",
     "crates/cpu/memory",
     "crates/cpu/segment",
     "crates/6502/config",
@@ -22,6 +23,7 @@ members = [
     "crates/tools/chip8-romtest",
     "crates/tools/chip8-term",
     "crates/tools/kim1-term",
+    "crates/tools/serial-term",
     "crates/tools/apple1-term",
     "crates/tools/pet-term",
 ]

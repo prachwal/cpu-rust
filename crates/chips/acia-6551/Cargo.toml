@@ -1,0 +1,10 @@
+[package]
+name = "acia-6551"
+version = "0.1.0"
+edition = "2021"
+description = "MOS 6551 ACIA — Asynchronous Communications Interface Adapter"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
