@@ -157,7 +157,7 @@ impl PetBus {
         if count >= 10 {
             return;
         }
-        self.ram[0x026F + count] = code;
+        self.ram[0x0270 + count] = code;
         self.ram[0x009E] = (count + 1) as u8;
     }
 }
