@@ -17,6 +17,7 @@ members = [
     "crates/other/z80",
     "crates/tools/chip8-romtest",
     "crates/tools/chip8-term",
+    "crates/tools/apple1-term",
 ]
 
 [profile.release]

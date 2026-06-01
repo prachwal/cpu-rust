@@ -1,0 +1,9 @@
+[package]
+name = "apple1-term"
+version = "0.1.0"
+edition = "2021"
+description = "Interactive Apple 1 terminal emulator"
+
+[dependencies]
+apple1-core = { path = "../../machines/apple1" }
+crossterm = "0.28"
