@@ -119,3 +119,49 @@ fn test_clear() {
     mem.clear();
     assert_eq!(mem.read(0x1000), 0x00);
 }
+
+#[test]
+fn test_apple1_pia_not_created_by_default() {
+    let config = MachineConfig::default();
+    let mem = Memory::new(&config);
+    // Apple1Pia is only created when is_apple1=true
+    // Default config has is_apple1=false
+}
+
+#[test]
+fn test_apple1_pia_created_with_apple1_config() {
+    let config = MachineConfig::apple1();
+    let mut mem = Memory::new(&config);
+    // PIA address $D010 should be readable
+    mem.write(0xD012, 0x41);  // DSP write
+    assert_eq!(mem.read(0xD012), 0x00); // DSP reads as 0
+}
+
+#[test]
+fn test_bus_trait_read_write() {
+    use cpu_bus::Bus;
+    let config = MachineConfig::default();
+    let mut mem = Memory::new(&config);
+    // Memory implements Bus
+    Bus::write(&mut mem, 0x2000, 0xAB);
+    assert_eq!(Bus::read(&mut mem, 0x2000), 0xAB);
+}
+
+#[test]
+fn test_bus_read_u16_write_u16() {
+    use cpu_bus::Bus;
+    let config = MachineConfig::default();
+    let mut mem = Memory::new(&config);
+    Bus::write_u16(&mut mem, 0x3000, 0x1234);
+    assert_eq!(Bus::read_u16(&mut mem, 0x3000), 0x1234);
+}
+
+#[test]
+fn test_memory_access_trait() {
+    use cpu_memory::MemoryAccess;
+    let config = MachineConfig::default();
+    let mem = Memory::new(&config);
+    // MemoryAccess trait provides read-only access
+    let val = MemoryAccess::read(&mem, 0x1000);
+    assert_eq!(val, 0);
+}

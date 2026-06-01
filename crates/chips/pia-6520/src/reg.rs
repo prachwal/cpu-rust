@@ -77,7 +77,7 @@ pub fn cb2_is_output(crb: u8) -> bool {
 }
 
 /// IRQ A1 is enabled when CRA bit 0 enables interrupt generation
-pub fn cra_irq_a1_enabled(cra: u8) -> bool {
+pub fn cra_irq_a1_enabled(_cra: u8) -> bool {
     // IRQ enabled when control bit enables the interrupt:
     // For 6821: IRQ A1 enabled when CR bit 0 causes flag to assert IRQ.
     // The flag asserts IRQ when read of data register clears previous flag.

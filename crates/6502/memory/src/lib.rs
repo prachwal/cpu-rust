@@ -72,7 +72,7 @@ impl Memory {
     }
 
     fn apple1_pia_for(config: &MachineConfig) -> Option<Apple1Pia> {
-        if config.label != "Apple 1" {
+        if !config.is_apple1 {
             return None;
         }
 
@@ -256,12 +256,7 @@ impl Bus for Memory {
     }
 }
 
-pub trait MemoryAccess {
-    fn read(&self, addr: u16) -> u8;
-    fn write(&mut self, addr: u16, value: u8);
-    fn read_u16(&self, addr: u16) -> u16;
-    fn write_u16(&mut self, addr: u16, value: u16);
-}
+pub use cpu_memory::MemoryAccess;
 
 impl MemoryAccess for Memory {
     fn read(&self, addr: u16) -> u8 { Memory::read(self, addr) }

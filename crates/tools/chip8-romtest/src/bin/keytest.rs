@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-use std::time::Instant;
 
 fn main() {
     let rom = PathBuf::from(std::env::args().nth(1).unwrap_or_else(|| {

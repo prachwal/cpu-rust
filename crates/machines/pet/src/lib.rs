@@ -74,7 +74,6 @@ struct PetBus {
     pia2: Pia6821,
     via: Via6522,
     vb_counter: u32,
-    tick_counter: u64,
 }
 
 impl PetBus {
@@ -99,7 +98,6 @@ impl PetBus {
             pia2: Pia6821::new(),
             via: Via6522::new(),
             vb_counter: 0,
-            tick_counter: 0,
         }
     }
 

@@ -357,14 +357,9 @@ impl Emulator {
     
     /// Reset the emulator to power-on state
     pub fn reset(&mut self) {
-        // Read reset vector BEFORE clearing memory
         let reset_vector = self.memory.get_reset_vector();
-        
         self.cpu.reset();
-        self.memory.clear();
         self.total_cycles = 0;
-        
-        // Set PC to the reset vector from memory
         self.cpu.pc = reset_vector;
     }
     
@@ -372,8 +367,6 @@ impl Emulator {
     pub fn soft_reset(&mut self) {
         self.cpu.reset();
         self.total_cycles = 0;
-        
-    // Set PC to the reset vector from memory
         self.cpu.pc = self.memory.get_reset_vector();
     }
 
@@ -466,6 +459,10 @@ impl Emulator {
     pub fn disassemble(&self, addr: u16) -> String {
         let opcode = self.memory.read(addr);
         if let Some(info) = instruction::decode(opcode) {
+            // Show illegal opcodes as .byte
+            if info.name.starts_with('*') {
+                return format!(".byte ${:02X}", opcode);
+            }
             match info.mode {
                 instruction::AddressingMode::Implied | instruction::AddressingMode::Accumulator =>
                     format!("{}", info.name),

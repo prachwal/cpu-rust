@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[non_exhaustive]
 pub enum CpuFamily {
     #[serde(rename = "nmos6502")]
     Nmos6502,
@@ -67,7 +68,7 @@ impl Default for CpuQuirks {
             bcd_available: true,
             kil_halts: true,
             rmw: RmwBehavior::Nmos,
-            undocumented_ops: false,
+            undocumented_ops: true,
             stp_available: false,
             wai_available: false,
         }
@@ -122,6 +123,8 @@ pub struct MachineConfig {
     pub reset_vector: u16,
     pub nmi_vector: u16,
     pub irq_vector: u16,
+    #[serde(default)]
+    pub is_apple1: bool,
 }
 
 impl MachineConfig {
@@ -136,6 +139,7 @@ impl MachineConfig {
             reset_vector: 0xFFFC,
             nmi_vector: 0xFFFA,
             irq_vector: 0xFFFE,
+            is_apple1: false,
         }
     }
     pub fn ricoh2a03() -> Self {
@@ -149,6 +153,7 @@ impl MachineConfig {
             reset_vector: 0xFFFC,
             nmi_vector: 0xFFFA,
             irq_vector: 0xFFFE,
+            is_apple1: false,
         }
     }
     pub fn w65c02() -> Self {
@@ -162,6 +167,7 @@ impl MachineConfig {
             reset_vector: 0xFFFC,
             nmi_vector: 0xFFFA,
             irq_vector: 0xFFFE,
+            is_apple1: false,
         }
     }
     pub fn r65c02() -> Self {
@@ -175,6 +181,7 @@ impl MachineConfig {
             reset_vector: 0xFFFC,
             nmi_vector: 0xFFFA,
             irq_vector: 0xFFFE,
+            is_apple1: false,
         }
     }
     pub fn mos6510() -> Self {
@@ -188,6 +195,7 @@ impl MachineConfig {
             reset_vector: 0xFFFC,
             nmi_vector: 0xFFFA,
             irq_vector: 0xFFFE,
+            is_apple1: false,
         }
     }
     pub fn mos6507() -> Self {
@@ -201,6 +209,7 @@ impl MachineConfig {
             reset_vector: 0xFFFC,
             nmi_vector: 0xFFFA,
             irq_vector: 0xFFFE,
+            is_apple1: false,
         }
     }
 
@@ -210,6 +219,14 @@ impl MachineConfig {
     pub fn c64() -> Self { Self::mos6510() }
     pub fn atari2600() -> Self { Self::mos6507() }
     pub fn apple2() -> Self { Self::nmos6502() }
+    pub fn apple1() -> Self {
+        Self {
+            label: "Apple 1".into(),
+            description: "Apple 1 — 6502 + PIA 6821 + terminal".into(),
+            is_apple1: true,
+            ..Self::nmos6502()
+        }
+    }
 
     pub fn has_jmp_indirect_bug(&self) -> bool { self.quirks.jmp_indirect_bug }
     pub fn supports_bcd(&self) -> bool { self.quirks.bcd_available }

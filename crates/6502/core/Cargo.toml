@@ -32,9 +32,3 @@ rand = "0.8"
 
 [features]
 default = []
-# Enable cycle-accurate emulation (slower but more accurate)
-cycle-accurate = []
-# Enable all undocumented opcodes
-undocumented-ops = []
-# Enable BCD mode support
-bcd-mode = []

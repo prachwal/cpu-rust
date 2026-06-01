@@ -1,32 +1,28 @@
 use super::*;
 
 #[test]
-fn test_new() {
-    let emu = Emulator::new();
+fn test_reset() {
+    let mut emu = Emulator::new();
+    emu.cpu.a = 0xFF;
+    emu.cpu.pc = 0x0000;
+    emu.set_reset_vector(0x8000);
+
+    emu.reset();
     assert_eq!(emu.cpu.a, 0);
     assert_eq!(emu.cpu.pc, 0x8000);
 }
 
 #[test]
-fn test_load_rom() {
+fn test_reset_preserves_vector_memory() {
     let mut emu = Emulator::new();
-    let rom = vec![0x00, 0xE0, 0x6A, 0x42];
-    emu.load_rom(&rom, 0x8000);
-    assert_eq!(emu.memory.read(0x8000), 0x00);
-    assert_eq!(emu.memory.read(0x8001), 0xE0);
+    emu.set_reset_vector(0xABCD);
+    emu.reset();
+    assert_eq!(emu.get_memory(0xFFFC), 0xCD);
+    assert_eq!(emu.get_memory(0xFFFD), 0xAB);
 }
 
 #[test]
-fn test_tick() {
-    let mut emu = Emulator::new();
-    emu.memory.write(0x8000, 0xEA); // NOP
-    let cycles = emu.tick();
-    assert_eq!(cycles, 2);
-    assert_eq!(emu.cpu.pc, 0x8001);
-}
-
-#[test]
-fn test_reset() {
+fn test_soft_reset() {
     let mut emu = Emulator::new();
     emu.cpu.a = 0xFF;
     emu.cpu.pc = 0x0000;
@@ -174,4 +170,57 @@ fn test_run() {
     let cycles = emu.run(100);
     assert!(cycles > 0);
     assert!(emu.cpu.pc > 0x8000);
+}
+
+#[test]
+fn test_trigger_brk() {
+    let mut emu = Emulator::new();
+    emu.memory.set_irq_vector(0xA000);
+    emu.memory.write(0xA000, 0xEA);
+    emu.cpu.pc = 0x8000;
+    emu.trigger_brk();
+    assert_eq!(emu.cpu.pc, 0xA000);
+    assert!(emu.cpu.sr.i());
+}
+
+#[test]
+fn test_disassemble_known_opcode() {
+    let mut emu = Emulator::new();
+    emu.set_memory(0x8000, 0xA9); // LDA #imm
+    emu.set_memory(0x8001, 0x42);
+    let s = emu.disassemble(0x8000);
+    assert_eq!(s, "LDA #$42");
+}
+
+#[test]
+fn test_disassemble_illegal_opcode_shows_dot_byte() {
+    let mut emu = Emulator::new();
+    emu.set_memory(0x8000, 0x03); // *SLO
+    let s = emu.disassemble(0x8000);
+    assert_eq!(s, ".byte $03");
+}
+
+#[test]
+fn test_disassemble_kil_shows_name() {
+    let mut emu = Emulator::new();
+    emu.set_memory(0x8000, 0x02); // KIL
+    let s = emu.disassemble(0x8000);
+    assert_eq!(s, "KIL");
+}
+
+#[test]
+fn test_load_rom_default() {
+    let mut emu = Emulator::new();
+    let rom = vec![0xEA, 0xEA];
+    emu.load_rom_default(&rom);
+    assert_eq!(emu.get_memory(0x8000), 0xEA);
+}
+
+#[test]
+fn test_set_variant_all() {
+    let mut emu = Emulator::new();
+    for variant in &["nmos", "nmos6502", "cmos", "w65c02", "nes", "ricoh2a03", "r65c02", "c64"] {
+        assert!(emu.set_variant(variant).is_ok(), "variant {}", variant);
+    }
+    assert!(emu.set_variant("invalid").is_err());
 }

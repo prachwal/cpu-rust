@@ -169,10 +169,12 @@ impl MachineConfig {
         (self.display.width, self.display.height)
     }
 
+    #[allow(dead_code)]
     pub fn pixel_scale(&self) -> (u16, u16) {
         (self.display.pixel_width, self.display.pixel_height)
     }
 
+    #[allow(dead_code)]
     pub fn display_area(&self) -> usize {
         (self.display.width as usize) * (self.display.height as usize)
     }

@@ -18,6 +18,7 @@ pub struct Memory {
 }
 
 impl Memory {
+    #[cfg(test)]
     pub fn new() -> Self {
         Memory::with_font_offset(0x050)
     }
@@ -36,10 +37,12 @@ impl Memory {
         self.inner.read(addr)
     }
 
+    #[cfg(test)]
     pub fn write(&mut self, addr: u16, val: u8) {
         self.inner.write(addr, val);
     }
 
+    #[allow(dead_code)]
     pub fn read_slice(&self, addr: u16, len: u16) -> &[u8] {
         let data = self.inner.as_slice();
         let start = addr as usize % MEM_SIZE;

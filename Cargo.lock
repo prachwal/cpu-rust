@@ -233,6 +233,7 @@ name = "mos6502-memory"
 version = "0.1.0"
 dependencies = [
  "cpu-bus",
+ "cpu-memory",
  "mos6502-config",
 ]
 
