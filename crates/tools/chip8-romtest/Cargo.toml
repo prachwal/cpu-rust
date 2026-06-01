@@ -1,0 +1,9 @@
+[package]
+name = "chip8-romtest"
+version = "0.1.0"
+edition = "2021"
+description = "CLI tool for testing CHIP-8 test ROMs"
+
+[dependencies]
+chip8-machine = { path = "../../machines/chip8" }
+cpu-display = { path = "../../cpu/display" }

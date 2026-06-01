@@ -74,57 +74,5 @@ impl Cpu {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_new() {
-        let cpu = Cpu::new();
-        assert_eq!(cpu.pc, 0x200);
-        assert_eq!(cpu.sp, 0);
-    }
-
-    #[test]
-    fn test_reset() {
-        let mut cpu = Cpu::new();
-        cpu.v[0] = 42;
-        cpu.pc = 0x300;
-        cpu.reset();
-        assert_eq!(cpu.v[0], 0);
-        assert_eq!(cpu.pc, 0x200);
-    }
-
-    #[test]
-    fn test_stack() {
-        let mut cpu = Cpu::new();
-        cpu.stack_push(0x234);
-        assert_eq!(cpu.sp, 1);
-        cpu.stack_push(0x456);
-        assert_eq!(cpu.sp, 2);
-        assert_eq!(cpu.stack_pop(), 0x456);
-        assert_eq!(cpu.sp, 1);
-        assert_eq!(cpu.stack_pop(), 0x234);
-        assert_eq!(cpu.sp, 0);
-    }
-
-    #[test]
-    fn test_timers() {
-        let mut cpu = Cpu::new();
-        cpu.delay = 10;
-        cpu.sound = 5;
-        cpu.tick_timers();
-        assert_eq!(cpu.delay, 9);
-        assert_eq!(cpu.sound, 4);
-        cpu.tick_timers();
-        assert_eq!(cpu.delay, 8);
-        assert_eq!(cpu.sound, 3);
-    }
-
-    #[test]
-    fn test_timers_dont_underflow() {
-        let mut cpu = Cpu::new();
-        cpu.tick_timers();
-        assert_eq!(cpu.delay, 0);
-        assert_eq!(cpu.sound, 0);
-    }
-}
+#[path = "tests/cpu.rs"]
+mod tests;

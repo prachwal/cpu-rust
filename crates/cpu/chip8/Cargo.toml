@@ -1,0 +1,16 @@
+[package]
+name = "chip8-cpu"
+version = "0.1.0"
+edition = "2021"
+description = "CHIP-8 CPU — registers, stack, timers, instruction execution"
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+cpu-bus = { path = "../bus" }
+cpu-display = { path = "../display" }
+cpu-keyboard = { path = "../keyboard" }
+
+[dev-dependencies]
+cpu-memory = { path = "../memory" }

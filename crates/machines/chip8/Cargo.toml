@@ -1,12 +1,14 @@
 [package]
-name = "chip8-core"
+name = "chip8-machine"
 version = "0.1.0"
 edition = "2021"
+description = "CHIP-8 / SUPER-CHIP / XO-CHIP machine emulator with WASM"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+chip8-cpu = { path = "../../cpu/chip8" }
 cpu-bus = { path = "../../cpu/bus" }
 cpu-display = { path = "../../cpu/display" }
 cpu-keyboard = { path = "../../cpu/keyboard" }
@@ -15,4 +17,3 @@ wasm-bindgen = "0.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 console_error_panic_hook = "0.1"
-

@@ -2,18 +2,21 @@
 resolver = "2"
 members = [
     "crates/cpu/bus",
+    "crates/cpu/chip8",
     "crates/cpu/display",
     "crates/cpu/keyboard",
     "crates/cpu/memory",
-    "crates/6502/core",
     "crates/6502/config",
+    "crates/6502/core",
     "crates/6502/memory",
     "crates/machines/apple1",
+    "crates/machines/chip8",
     "crates/machines/pet",
     "crates/chips/pia-6520",
     "crates/chips/via-6522",
-    "crates/other/chip8",
     "crates/other/z80",
+    "crates/tools/chip8-romtest",
+    "crates/tools/chip8-term",
 ]
 
 [profile.release]
