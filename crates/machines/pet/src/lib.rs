@@ -76,6 +76,8 @@ struct PetBus {
     pia2: Pia6821,
     via: Via6522,
     vb_counter: u32,
+    blink_on: bool,
+    blink_counter: u8,
     display: RefCell<Display>,
 }
 
@@ -107,6 +109,8 @@ impl PetBus {
             pia2: Pia6821::new(),
             via: Via6522::new(),
             vb_counter: 0,
+            blink_on: false,
+            blink_counter: 0,
             display: RefCell::new(Display::new_text(cfg, 40, 25, font, cpu_display::FontMapping::Direct)),
         }
     }
@@ -120,8 +124,9 @@ impl PetBus {
             for col in 0..cols {
                 let idx = row * cols + col;
                 let mut ch = self.screen.get(idx).copied().unwrap_or(0x20);
-                if cursor_idx == Some(idx) && ch == 0x00 {
-                    ch = 0x20;
+                if cursor_idx == Some(idx) && self.blink_on {
+                    // Show cursor as inverse of the character at this position
+                    ch |= 0x80;
                 }
                 disp.set_char(col as u16, row as u16, ch);
             }
@@ -304,6 +309,12 @@ impl Pet2001 {
                     self.bus.ram[0xAA] ^= 1;
                 } else {
                     self.bus.ram[0xA8] = a8 - 1;
+                }
+                // Cursor blink at ~30 Hz
+                self.bus.blink_counter += 1;
+                if self.bus.blink_counter >= 30 {
+                    self.bus.blink_counter = 0;
+                    self.bus.blink_on = !self.bus.blink_on;
                 }
                 self.bus.ram[0x8F] = self.bus.ram[0x8F].wrapping_add(1);
                 if self.bus.ram[0x8F] >= 20 {
