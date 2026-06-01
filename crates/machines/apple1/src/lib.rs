@@ -1,6 +1,8 @@
 use cpu_bus::Bus;
+use cpu_display::{Display, DisplayConfig, DisplayMode, Font, FontMapping};
 use mos6502_core::*;
 use pia_6520::Pia6821;
+use std::cell::RefCell;
 use std::collections::VecDeque;
 use wasm_bindgen::prelude::*;
 
@@ -9,12 +11,18 @@ use wasm_bindgen::prelude::*;
 struct Apple1Pia {
     pia: Pia6821,
     keyboard: VecDeque<u8>,
-    display: Vec<u8>,
+    display: RefCell<Display>,
 }
 
 impl Apple1Pia {
     fn new() -> Self {
-        Apple1Pia { pia: Pia6821::new(), keyboard: VecDeque::new(), display: Vec::new() }
+        let cfg = DisplayConfig::apple1();
+        let font = Font::ascii_8x8();
+        Apple1Pia {
+            pia: Pia6821::new(),
+            keyboard: VecDeque::new(),
+            display: RefCell::new(Display::new_text(cfg, 40, 24, font, FontMapping::Apple1)),
+        }
     }
     fn push_key(&mut self, ch: u8) { self.keyboard.push_back(ch); }
     fn read(&mut self, addr: u16) -> u8 {
@@ -32,13 +40,13 @@ impl Apple1Pia {
     fn write(&mut self, addr: u16, val: u8) {
         match addr & 3 {
             0 | 1 => { self.pia.write(addr, val); }
-            2 => { self.display.push(val & 0x7F); }
+            2 => { self.display.borrow_mut().put_char(val & 0x7F); }
             3 => { self.pia.write(addr, val); }
             _ => {}
         }
     }
     fn push_display(&mut self, val: u8) {
-        self.display.push(val & 0x7F);
+        self.display.borrow_mut().put_char(val & 0x7F);
     }
 }
 
@@ -129,19 +137,21 @@ impl Apple1Emulator {
         self.bus.pia.push_key(ascii);
     }
 
-    /// Get display output pointer (raw ASCII bytes)
+    /// Get rendered RGBA buffer (calls render() internally)
     pub fn display_ptr(&self) -> *const u8 {
-        self.bus.pia.display.as_ptr()
+        self.bus.pia.display.borrow_mut().render().as_ptr()
     }
 
-    /// Get display output length
     pub fn display_len(&self) -> usize {
-        self.bus.pia.display.len()
+        self.bus.pia.display.borrow_mut().render().len()
     }
 
-    /// Drain and return display output as a JS array
     pub fn take_display(&mut self) -> Vec<u8> {
-        std::mem::take(&mut self.bus.pia.display)
+        self.bus.pia.display.borrow_mut().render().to_vec()
+    }
+
+    pub fn display_chars(&self) -> Vec<u8> {
+        self.bus.pia.display.borrow().get_buffer()
     }
 
     pub fn get_pc(&self) -> u16 {

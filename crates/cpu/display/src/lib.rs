@@ -261,6 +261,34 @@ impl Font {
         }
     }
 
+    /// Generate a minimal 8×8 bitmap font for ASCII 0x20-0x7F (96 chars).
+    /// Each character is 8 bytes, one byte per row, MSB = leftmost pixel.
+    pub fn ascii_8x8() -> Self {
+        let count = 96;
+        let mut data = vec![0u8; count * 8];
+        for i in 0..count as u8 {
+            let ch = i + 0x20;
+            let base = i as usize * 8;
+            match ch {
+                0x20 => {} // space = blank
+                // Simple box characters for all printable ASCII
+                _ => {
+                    // Top and bottom rows = borders
+                    data[base] = 0xFF;
+                    data[base + 7] = 0xFF;
+                    // Middle rows: sides only, fill for dense chars
+                    let filled = ch.is_ascii_uppercase() || ch.is_ascii_lowercase()
+                        || ch.is_ascii_digit() || matches!(ch, b'@' | b'#' | b'$' | b'%' | b'&');
+                    for row in 1..7 {
+                        let r = if filled { 0xFF } else { 0x81 };
+                        data[base + row as usize] = r;
+                    }
+                }
+            }
+        }
+        Self { data, char_width: 8, char_height: 8, first: 0x20, last: 0x7F, count: 96, row_stride: 1 }
+    }
+
     /// Get the pixel at (x, y) within character `ch`.
     /// `ch` is first mapped through the `first` offset.
     /// Returns `true` if the pixel is set.
@@ -323,6 +351,8 @@ pub struct Display {
     chars: Vec<u8>,      // character code per cell
     char_fg: Vec<u8>,    // foreground colour index per cell
     char_bg: Vec<u8>,    // background colour index per cell
+    cursor_row: u16,     // current write cursor row
+    cursor_col: u16,     // current write cursor column
 
     // Font (for text mode)
     font: Option<Font>,
@@ -346,6 +376,8 @@ impl Display {
             chars: Vec::new(),
             char_fg: Vec::new(),
             char_bg: Vec::new(),
+            cursor_row: 0,
+            cursor_col: 0,
             font: None,
             mapping: FontMapping::Direct,
             rendered: Vec::new(),
@@ -362,6 +394,8 @@ impl Display {
             chars: Vec::new(),
             char_fg: Vec::new(),
             char_bg: Vec::new(),
+            cursor_row: 0,
+            cursor_col: 0,
             font: None,
             mapping: FontMapping::Direct,
             rendered: Vec::new(),
@@ -380,6 +414,8 @@ impl Display {
             chars: vec![0x20; cell_count],
             char_fg: vec![1; cell_count],
             char_bg: vec![0; cell_count],
+            cursor_row: 0,
+            cursor_col: 0,
             font: Some(font),
             mapping,
             rendered: vec![0; buf_size],
@@ -525,6 +561,57 @@ impl Display {
             }
         }
         0
+    }
+
+    /// Write a character at the current cursor position, advancing cursor.
+    /// Handles newline, wrapping, and scrolling.
+    pub fn put_char(&mut self, ch: u8) {
+        if let DisplayMode::Text(cols, rows) = self.mode {
+            match ch {
+                b'\r' | b'\n' => {
+                    self.cursor_col = 0;
+                    self.cursor_row += 1;
+                    if self.cursor_row >= rows {
+                        self.scroll_up(1);
+                        self.cursor_row = rows - 1;
+                    }
+                }
+                0x08 | 0x7F => { // backspace
+                    if self.cursor_col > 0 {
+                        self.cursor_col -= 1;
+                    }
+                    self.set_char(self.cursor_col, self.cursor_row, 0x20);
+                }
+                _ => {
+                    self.set_char(self.cursor_col, self.cursor_row, ch);
+                    self.cursor_col += 1;
+                    if self.cursor_col >= cols {
+                        self.cursor_col = 0;
+                        self.cursor_row += 1;
+                        if self.cursor_row >= rows {
+                            self.scroll_up(1);
+                            self.cursor_row = rows - 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Scroll text display up by `lines` rows.
+    pub fn scroll_up(&mut self, lines: u16) {
+        if let DisplayMode::Text(cols, rows) = self.mode {
+            let c = cols as usize;
+            let r = rows as usize;
+            let shift = (lines as usize).min(r);
+            self.chars.copy_within(shift * c.., 0);
+            self.char_fg.copy_within(shift * c.., 0);
+            self.char_bg.copy_within(shift * c.., 0);
+            // Clear bottom rows
+            let clear_start = (r - shift) * c;
+            self.chars[clear_start..].fill(0x20);
+            self.dirty = true;
+        }
     }
 
     /// Access the character buffer directly.

@@ -12,6 +12,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "cpu-bus",
+ "cpu-display",
  "mos6502-core",
  "pia-6520",
  "wasm-bindgen",
@@ -337,6 +338,7 @@ version = "0.1.0"
 dependencies = [
  "console_error_panic_hook",
  "cpu-bus",
+ "cpu-display",
  "mos6502-core",
  "pia-6520",
  "via-6522",

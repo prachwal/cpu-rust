@@ -19,8 +19,10 @@
 //!   CB1  — Vertical Blank (60Hz) — cursor blink / keyboard scan
 
 use cpu_bus::Bus;
+use cpu_display::{Display, DisplayConfig, Font, FontMapping};
 use mos6502_core::*;
 use pia_6520::Pia6821;
+use std::cell::RefCell;
 use via_6522::Via6522;
 use wasm_bindgen::prelude::*;
 
@@ -74,10 +76,12 @@ struct PetBus {
     pia2: Pia6821,
     via: Via6522,
     vb_counter: u32,
+    display: RefCell<Display>,
+    chargen: Vec<u8>,
 }
 
 impl PetBus {
-    fn new(basic_c000: &[u8], basic_d000: &[u8], editor: &[u8], kernal: &[u8]) -> Self {
+    fn new(basic_c000: &[u8], basic_d000: &[u8], editor: &[u8], kernal: &[u8], chargen: &[u8]) -> Self {
         let mut b1 = vec![0u8; 0x1000];
         b1[..basic_c000.len()].copy_from_slice(basic_c000);
         let mut b2 = vec![0u8; 0x1000];
@@ -86,6 +90,12 @@ impl PetBus {
         ed[..editor.len()].copy_from_slice(editor);
         let mut kr = vec![0u8; 0x1000];
         kr[..kernal.len()].copy_from_slice(kernal);
+        let mut cg = vec![0u8; 2048];
+        if chargen.len() >= 2048 {
+            cg.copy_from_slice(&chargen[..2048]);
+        }
+        let font = Font::load_pet(&cg);
+        let cfg = DisplayConfig::pet();
         PetBus {
             ram: vec![0u8; 0x8000],
             basic_c000: b1,
@@ -98,6 +108,21 @@ impl PetBus {
             pia2: Pia6821::new(),
             via: Via6522::new(),
             vb_counter: 0,
+            display: RefCell::new(Display::new_text(cfg, 40, 25, font, FontMapping::PetAscii)),
+            chargen: cg,
+        }
+    }
+
+    fn sync_display(&self) {
+        let mut disp = self.display.borrow_mut();
+        let rows = 25;
+        let cols = 40;
+        for row in 0..rows {
+            for col in 0..cols {
+                let idx = row * cols + col;
+                let ch = self.screen.get(idx).copied().unwrap_or(0x20);
+                disp.set_char(col as u16, row as u16, ch);
+            }
         }
     }
 
@@ -197,11 +222,12 @@ impl Pet2001 {
     #[wasm_bindgen(constructor)]
     pub fn new() -> Self {
         console_error_panic_hook::set_once();
+        let chargen = build_chargen();
         Pet2001 {
             cpu: Emulator::new(),
-            bus: PetBus::new(&[], &[], &[], &[]),
+            bus: PetBus::new(&[], &[], &[], &[], &chargen),
             roms_loaded: false,
-            chargen: build_chargen(),
+            chargen,
         }
     }
 
@@ -212,7 +238,8 @@ impl Pet2001 {
         editor: &[u8],
         kernal: &[u8],
     ) {
-        self.bus = PetBus::new(basic_c000, basic_d000, editor, kernal);
+        let chargen = self.chargen.clone();
+        self.bus = PetBus::new(basic_c000, basic_d000, editor, kernal, &chargen);
         self.cpu = Emulator::new();
         self.cpu.set_register_sp(0xFF);
         let rv = (self.bus.kernal[0xFFC] as u16) | ((self.bus.kernal[0xFFD] as u16) << 8);
@@ -230,7 +257,8 @@ impl Pet2001 {
             return 0;
         }
         let mut n = 0u32;
-        for _ in 0..count {
+        let sync_every = count.max(1000);
+        for i in 0..count {
             // Execute one instruction (returns cycles)
             let c = self.cpu.tick_bus(&mut self.bus);
             if c == 0 {
@@ -268,6 +296,8 @@ impl Pet2001 {
             }
             n += 1;
         }
+        // Sync display after batch
+        self.bus.sync_display();
         n
     }
 
@@ -313,6 +343,16 @@ impl Pet2001 {
     }
     pub fn chargen_len(&self) -> usize {
         self.chargen.len()
+    }
+    pub fn display_ptr(&self) -> *const u8 {
+        self.bus.display.borrow_mut().render().as_ptr()
+    }
+    pub fn display_len(&self) -> usize {
+        self.bus.display.borrow_mut().render().len()
+    }
+    pub fn take_display(&mut self) -> Vec<u8> {
+        self.bus.sync_display();
+        self.bus.display.borrow_mut().render().to_vec()
     }
     pub fn get_pc(&self) -> u16 {
         self.cpu.get_register_pc()
