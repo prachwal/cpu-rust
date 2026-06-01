@@ -25,6 +25,7 @@ members = [
     "crates/tools/kim1-term",
     "crates/tools/serial-term",
     "crates/tools/apple1-term",
+    "crates/tools/apple1-window",
     "crates/tools/pet-term",
 ]
 

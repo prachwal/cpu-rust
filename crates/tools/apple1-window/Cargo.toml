@@ -1,0 +1,13 @@
+[package]
+name = "apple1-window"
+version = "0.1.0"
+edition = "2021"
+description = "Apple 1 graphical window — minifb + cpu-display RGBA"
+
+[[bin]]
+name = "apple1-window"
+path = "src/main.rs"
+
+[dependencies]
+apple1-core = { path = "../../machines/apple1" }
+minifb = "0.25"
