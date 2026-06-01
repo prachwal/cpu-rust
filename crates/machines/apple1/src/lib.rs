@@ -1,5 +1,5 @@
 use cpu_bus::Bus;
-use cpu_display::{Display, DisplayConfig, DisplayMode, Font, FontMapping};
+use cpu_display::{Display, DisplayConfig, Font, FontMapping};
 use mos6502_core::*;
 use pia_6520::Pia6821;
 use std::cell::RefCell;
@@ -11,7 +11,8 @@ use wasm_bindgen::prelude::*;
 struct Apple1Pia {
     pia: Pia6821,
     keyboard: VecDeque<u8>,
-    display: RefCell<Display>,
+    display: Vec<u8>,          // ASCII chars for terminal
+    gfx: RefCell<Display>,     // RGBA renderer
 }
 
 impl Apple1Pia {
@@ -21,7 +22,8 @@ impl Apple1Pia {
         Apple1Pia {
             pia: Pia6821::new(),
             keyboard: VecDeque::new(),
-            display: RefCell::new(Display::new_text(cfg, 40, 24, font, FontMapping::Apple1)),
+            display: Vec::new(),
+            gfx: RefCell::new(Display::new_text(cfg, 40, 24, font, FontMapping::Apple1)),
         }
     }
     fn push_key(&mut self, ch: u8) { self.keyboard.push_back(ch); }
@@ -40,13 +42,19 @@ impl Apple1Pia {
     fn write(&mut self, addr: u16, val: u8) {
         match addr & 3 {
             0 | 1 => { self.pia.write(addr, val); }
-            2 => { self.display.borrow_mut().put_char(val & 0x7F); }
+            2 => {
+                let ch = val & 0x7F;
+                self.display.push(ch);
+                self.gfx.borrow_mut().put_char(ch);
+            }
             3 => { self.pia.write(addr, val); }
             _ => {}
         }
     }
     fn push_display(&mut self, val: u8) {
-        self.display.borrow_mut().put_char(val & 0x7F);
+        let ch = val & 0x7F;
+        self.display.push(ch);
+        self.gfx.borrow_mut().put_char(ch);
     }
 }
 
@@ -137,21 +145,28 @@ impl Apple1Emulator {
         self.bus.pia.push_key(ascii);
     }
 
-    /// Get rendered RGBA buffer (calls render() internally)
+    // ── Legacy ASCII display (for terminal) ──
+
     pub fn display_ptr(&self) -> *const u8 {
-        self.bus.pia.display.borrow_mut().render().as_ptr()
+        self.bus.pia.display.as_ptr()
     }
-
     pub fn display_len(&self) -> usize {
-        self.bus.pia.display.borrow_mut().render().len()
+        self.bus.pia.display.len()
     }
-
     pub fn take_display(&mut self) -> Vec<u8> {
-        self.bus.pia.display.borrow_mut().render().to_vec()
+        std::mem::take(&mut self.bus.pia.display)
     }
 
-    pub fn display_chars(&self) -> Vec<u8> {
-        self.bus.pia.display.borrow().get_buffer()
+    // ── RGBA rendered display (for graphical frontends) ──
+
+    pub fn gfx_ptr(&self) -> *const u8 {
+        self.bus.pia.gfx.borrow_mut().render().as_ptr()
+    }
+    pub fn gfx_len(&self) -> usize {
+        self.bus.pia.gfx.borrow_mut().render().len()
+    }
+    pub fn take_gfx(&mut self) -> Vec<u8> {
+        self.bus.pia.gfx.borrow_mut().render().to_vec()
     }
 
     pub fn get_pc(&self) -> u16 {
